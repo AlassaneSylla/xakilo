@@ -1,0 +1,26 @@
+@import url("https://fonts.googleapis.com/css2?family=Roboto&display=swap");
+@import "tailwindcss";
+@plugin "daisyui";
+
+:root {
+    --primary: #00C4B4;
+    --secondary: #5EFADB;
+    --primary-hover: #006D77;
+    --black: #424242;
+    --brokenWhite: #F8F9FA;
+    --grey: #CBD5E1;
+    --grey-hover: rgb(128, 135, 141);
+    --entries: #007bff;
+    --removals: #fd7e14;
+}
+
+@theme {
+    --font-roboto: "Roboto", sans-serif; 
+}
+
+
+
+
+
+
+
