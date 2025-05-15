@@ -19,7 +19,10 @@ const sidebar = [
 
 function Sidebar() {
     return (
-        <aside className="w-64 bg-[var(--black)] text-[var(--brokenWhite)] p-5 mb-1">
+        <aside
+            className="w-60 h-full bg-[var(--black)] text-[var(--brokenWhite)] p-5 mb-1"
+            style={{ height: 'calc(100vh - 64px - 48px - 5px)' }}
+        >
            <ul className="space-y-2">
                 {sidebar.map((item) => (
                     <li key={item.wording}>

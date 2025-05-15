@@ -15,7 +15,17 @@
 }
 
 @theme {
-    --font-roboto: "Roboto", sans-serif; 
+    --font-roboto: "Roboto", sans-serif;
+}
+
+h1 {
+    color: var(--primary);
+    padding: 0 0 1.3rem 0;
+}
+
+h2 {
+    color: var(--primary);
+    padding-bottom: 2rem;
 }
 
 
