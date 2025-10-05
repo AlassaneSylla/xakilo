@@ -7,7 +7,7 @@ import InpuOutput from '../components/InputOutput';
 function Home() {
     return (
         <div>
-            <h1 className="text-3xl font-bold">Bienvenu(e) Alassane</h1>
+            <h1 className="text-3xl font-bold uppercase">Bienvenu(e) Alassane</h1>
 
             {/* stock statistics */}
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 mb-12">

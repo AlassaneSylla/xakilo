@@ -4,77 +4,75 @@ import Button from "../components/Button"
 import { SquarePen, Trash } from 'lucide-react';
 
 
-type Product = {
-  productName: string;
+type Entry = {
+  product: string;
   category: string;
+  dateRegister: Date;
+  quantity: number;
+  supplier: string;
   reference: string;
-  stock: number;
-  unitPrice: number;
 };
 
-const mockProducts: Product[] = [
-  {productName: 'clavier AZERTY', category: 'informatique', reference: '0001', stock: 125, unitPrice: 15000},
-  {productName: 'souris sans fil', category: 'informatique', reference: '0054', stock: 75, unitPrice: 3500},
-  {productName: 'écran LED samsung', category: 'électronique', reference: '0987', stock: 100, unitPrice: 250000},
-  {productName: 'Chaise de bureau', category: 'moblier', reference: '2560', stock: 50, unitPrice: 45000},
-  {productName: 'Bureau en bois', category: 'meublier', reference: '0974', stock: 80, unitPrice: 110000},
-  {productName: 'Imprimante Lazer JetSet', category: 'électronique', reference: '2890', stock: 55, unitPrice: 35000},
-  {productName: 'Tapis de souris', category: 'informatique', reference: '7820', stock: 200, unitPrice: 2000},
-  {productName: 'Clé USB 64Go', category: 'électronique', reference: '29871', stock: 100, unitPrice: 4000},
-  {productName: 'Disc dure ext', category: 'informatique', reference: '7783', stock: 200, unitPrice: 7000},
-  {productName: 'Lamp de bureau', category: 'électronique', reference: '8894', stock: 300, unitPrice: 5000},
-  {productName: 'Lamp de bureau', category: 'électronique', reference: '8894', stock: 300, unitPrice: 5000},
-  {productName: 'Lamp de bureau', category: 'électronique', reference: '8894', stock: 300, unitPrice: 5000},
-  {productName: 'Lamp de bureau', category: 'électronique', reference: '8894', stock: 300, unitPrice: 5000},
-  {productName: 'Lamp de bureau', category: 'électronique', reference: '8894', stock: 300, unitPrice: 5000},
-  {productName: 'Lamp de bureau', category: 'électronique', reference: '8894', stock: 300, unitPrice: 5000}
-]
+const mockEntries: Entry[] = [
+  { product: 'Clavier AZERTY', category: 'Informatique', dateRegister: new Date('2025-10-01'), quantity: 50, supplier: 'TechCorp', reference: '0001' },
+  { product: 'Souris sans fil', category: 'Informatique', dateRegister: new Date('2025-10-02'), quantity: 30, supplier: 'TechCorp', reference: '0054' },
+  { product: 'Écran LED Samsung', category: 'Électronique', dateRegister: new Date('2025-10-02'), quantity: 20, supplier: 'ElecPro', reference: '0987' },
+  { product: "HP Elitebook 845", category: 'Informatique', dateRegister: new Date('2024-12-24'), quantity: 175, supplier: 'Infinity Services', reference: '0398'},
+  { product: "Ventilateur", category: 'Electronique', dateRegister: new Date('2024-10-03'), quantity: 200, supplier: 'Elecronics Corps', reference: '03ty8'},
+  { product: "Iphone 17", category: 'Electronique', dateRegister: new Date('2025-09-24'), quantity: 225, supplier: 'Fuladu', reference: '08598'},
+  { product: "Hoofer", category: 'Electronique', dateRegister: new Date('2025-11-04'), quantity: 90, supplier: 'Electro SN', reference: '9398'}
+];
 
-function Products() {
-  const [products] = useState<Product[]>(mockProducts);
+
+function Entry() {
+  const [entry] = useState<Entry[]>(mockEntries);
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 5;
 
   const indexOfLast = currentPage * itemsPerPage;
   const indexOfFirst = indexOfLast - itemsPerPage;
-  const currentItems = products.slice(indexOfFirst, indexOfLast);
-  const numberOfPages = Math.ceil(products.length / itemsPerPage);
+  const currentItems = entry.slice(indexOfFirst, indexOfLast);
+  const numberOfPages = Math.ceil(entry.length / itemsPerPage);
    
   return (
     <div>
-      <h1 className="text-2xl font-bold uppercase">Liste Produits</h1>
+      <h1 className="text-2xl font-bold uppercase">Table des Entrées</h1>
       <div className="grid grid-cols-3 gap-10 mb-8">
           <label className="input">
               <Search />
               <input type="search" required placeholder="Rechercher" />
           </label>
           <Button variant="primary" size="md">
-              <Plus /> Ajouter produit
+              <Plus /> Effectuer Entrée
           </Button>
           <Button variant="greyghost" size="md">
-              <ListFilter /> Filtrer Produits
+              <ListFilter /> Filtrer Entrée
           </Button>
       </div>
       <div className='overfow-x-auto'>
           <table className="table">
               <thead>
                 <tr className="bg-base-200">
-                  <th>Nom Produit</th>
+                  <th>Produits</th>
                   <th>Catégorie</th>
                   <th>Référence</th>
-                  <th>Stock</th>
-                  <th>Prix Unitaire</th>
+                  <th>Date</th>
+                  <th>Quantité</th>
+                  <th>Fournisseur</th>
+                  <th>Référence</th>
                   <th>Actions</th>
                 </tr>
               </thead>
               <tbody className='transition-all duration-300 ease-in-out'>
                 {currentItems.map((row, index) => (
                   <tr key={index} className="hover:bg-base-200 cursor-pointer">
-                    <th>{row.productName}</th>
+                    <th>{row.product}</th>
                     <td>{row.category}</td>
                     <td>{row.reference}</td>
-                    <td>{row.stock}</td>
-                    <td>{row.unitPrice}</td>
+                    <td>{row.dateRegister.toLocaleDateString()}</td>
+                    <td>{row.quantity}</td>
+                    <td>{row.supplier}</td>
+                    <td>{row.reference}</td>
                     <td className='flex flex-direction-row gap-6'>
                       <button className="btn btn-xs bg-transparent border border-0 hover:text-[color:var(--primary)]"
                       >
@@ -107,7 +105,7 @@ function Products() {
         <button 
           className="btn btn-sm bg-[var(--black)] text-[var(--brokenWhite)]" 
           onClick={() => setCurrentPage((p) => p + 1)}
-          disabled={indexOfLast >= products.length}
+          disabled={indexOfLast >= entry.length}
         >
           Suivant
         </button>
@@ -116,4 +114,4 @@ function Products() {
   )
 }
 
-export default Products
+export default Entry
