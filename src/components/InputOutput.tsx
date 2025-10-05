@@ -20,7 +20,7 @@ export default function InpuOutput() {
           </thead>
           <tbody>
             {data.map((row, index) => (
-              <tr key={index}>
+              <tr key={index} className="hover:bg-base-100">
                 <th>{row.mois}</th>
                 <td>{row.produit}</td>
                 <td>{row.entrees}</td>

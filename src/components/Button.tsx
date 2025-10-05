@@ -3,7 +3,7 @@ import clsx from 'clsx';
 
 interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
     children: ReactNode;
-    variant?: 'primary' | 'redghost' | 'ghost' | 'secondary';
+    variant?: 'primary' | 'redghost' | 'ghost' | 'secondary' | 'greyghost';
     size?: 'sm' | 'md' | 'lg';
     className?: string;
 }
@@ -15,6 +15,7 @@ const variantStyles = {
     secondary: 'btn bg-blue-100 border-1 border-blue-300 text-blue-500 hover:bg-blue-400 hover:text-[var(--brokenWhite)]',
     redghost: 'btn bg-red-100 border-1 border-red-300 text-red-500 hover:bg-red-400 hover:text-[var(--brokenWhite)]',
     ghost: 'btn bg-orange-100 border-1 border-orange-300 text-orange-500 hover:bg-orange-400 hover:text-[var(--brokenWhite)]',
+    greyghost: 'btn bg-gray-300 border-1 border-gray-400 text-gray-800 hover:bg-gray-500 hover:text-[var(--brokenWhite)]'
 };
 
 // const sizeStyles = {
