@@ -1,37 +1,14 @@
+import { useData } from '../context/DataContext';
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { Search, Plus, ListFilter } from 'lucide-react';
 import Button from "../components/Button"
 import { SquarePen, Trash } from 'lucide-react';
 
 
-type Product = {
-  productName: string;
-  category: string;
-  reference: string;
-  stock: number;
-  unitPrice: number;
-};
+export default function Products() {
+  const { products } = useData();
 
-const mockProducts: Product[] = [
-  {productName: 'clavier AZERTY', category: 'informatique', reference: '0001', stock: 125, unitPrice: 15000},
-  {productName: 'souris sans fil', category: 'informatique', reference: '0054', stock: 75, unitPrice: 3500},
-  {productName: 'écran LED samsung', category: 'électronique', reference: '0987', stock: 100, unitPrice: 250000},
-  {productName: 'Chaise de bureau', category: 'moblier', reference: '2560', stock: 50, unitPrice: 45000},
-  {productName: 'Bureau en bois', category: 'meublier', reference: '0974', stock: 80, unitPrice: 110000},
-  {productName: 'Imprimante Lazer JetSet', category: 'électronique', reference: '2890', stock: 55, unitPrice: 35000},
-  {productName: 'Tapis de souris', category: 'informatique', reference: '7820', stock: 200, unitPrice: 2000},
-  {productName: 'Clé USB 64Go', category: 'électronique', reference: '29871', stock: 100, unitPrice: 4000},
-  {productName: 'Disc dure ext', category: 'informatique', reference: '7783', stock: 200, unitPrice: 7000},
-  {productName: 'Lamp de bureau', category: 'électronique', reference: '8894', stock: 300, unitPrice: 5000},
-  {productName: 'Lamp de bureau', category: 'électronique', reference: '8894', stock: 300, unitPrice: 5000},
-  {productName: 'Lamp de bureau', category: 'électronique', reference: '8894', stock: 300, unitPrice: 5000},
-  {productName: 'Lamp de bureau', category: 'électronique', reference: '8894', stock: 300, unitPrice: 5000},
-  {productName: 'Lamp de bureau', category: 'électronique', reference: '8894', stock: 300, unitPrice: 5000},
-  {productName: 'Lamp de bureau', category: 'électronique', reference: '8894', stock: 300, unitPrice: 5000}
-]
-
-function Products() {
-  const [products] = useState<Product[]>(mockProducts);
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 5;
 
@@ -58,20 +35,20 @@ function Products() {
       <div className='overfow-x-auto'>
           <table className="table">
               <thead>
-                <tr className="bg-base-200">
-                  <th>Nom Produit</th>
-                  <th>Catégorie</th>
-                  <th>Référence</th>
-                  <th>Stock</th>
-                  <th>Prix Unitaire</th>
+                <tr className="bg-base-100">
+                  <th>🏷️ Produit</th>
+                  <th>📂 Catégorie</th>
+                  <th>🔢 Référence</th>
+                  <th>📦 Stock</th>
+                  <th>💰 Prix Unitaire</th>
                   <th>Actions</th>
                 </tr>
               </thead>
               <tbody className='transition-all duration-300 ease-in-out'>
                 {currentItems.map((row, index) => (
-                  <tr key={index} className="hover:bg-base-200 cursor-pointer">
-                    <th>{row.productName}</th>
-                    <td>{row.category}</td>
+                  <tr key={index} className="hover:bg-base-200">
+                    <th className='capitalize'>{row.productName}</th>
+                    <td className='capitalize'>{row.category}</td>
                     <td>{row.reference}</td>
                     <td>{row.stock}</td>
                     <td>{row.unitPrice}</td>
@@ -84,6 +61,13 @@ function Products() {
                       >
                         <Trash />
                       </button>
+                      <Link 
+                        to={`/products/${row.reference}/fiche-stock`} 
+                        state={{ product: row }} //get product data
+                        className="btn btn-xs btn-outline hover:text-[color:var(--brokenWhite)] hover:bg-[color:var(--black)]"
+                      >
+                        Voir Fiche
+                      </Link>
                     </td>
                   </tr>
                 ))}
@@ -115,5 +99,3 @@ function Products() {
     </div>
   )
 }
-
-export default Products

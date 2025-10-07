@@ -49,9 +49,4 @@ function Home() {
     )
 }
 
-export default Home
-
-
-{/* <Button >Par défaut</Button>
-            <Button variant="secondary">Secondaire large</Button>
-            <Button variant="ghost">Ghost small</Button> */}
+export default Home;

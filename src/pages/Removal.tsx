@@ -1,39 +1,20 @@
+import { useData } from '../context/DataContext';
 import { useState } from 'react';
-import { Search, Plus, ListFilter } from 'lucide-react';
+import { Search, ListFilter, Minus } from 'lucide-react';
 import Button from "../components/Button";
 import { SquarePen, Trash, ReceiptText } from 'lucide-react';
 
 
-type Removal = {
-  product: string;        
-  category: string;       
-  dateRegister: Date;     
-  quantity: number;       
-  destination: "vente" | "perte" | "autres";  // client, service interne ou perte
-  reference: string;      
-};
+export default function Removal() {
+  const { removals } = useData();
 
-
-const mockEntries: Removal[] = [
-  { product: 'Clavier AZERTY', category: 'Informatique', dateRegister: new Date('2025-10-01'), quantity: 50, destination: 'vente', reference: '0001' },
-  { product: 'Souris sans fil', category: 'Informatique', dateRegister: new Date('2025-10-02'), quantity: 30, destination: 'vente', reference: '0054' },
-  { product: 'Écran LED Samsung', category: 'Électronique', dateRegister: new Date('2025-10-02'), quantity: 10, destination: 'autres', reference: '0987' },
-  { product: "HP Elitebook 845", category: 'Informatique', dateRegister: new Date('2024-12-24'), quantity: 175, destination: 'autres', reference: '0398'},
-  { product: "Ventilateur", category: 'Electronique', dateRegister: new Date('2024-10-03'), quantity: 60, destination: 'vente', reference: '03ty8'},
-  { product: "Iphone 17", category: 'Electronique', dateRegister: new Date('2025-09-24'), quantity: 15, destination: 'perte', reference: '08598'},
-  { product: "Hoofer", category: 'Electronique', dateRegister: new Date('2025-11-04'), quantity: 90, destination: 'vente', reference: '9398'}
-];
-
-
-function Entry() {
-  const [removal] = useState<Removal[]>(mockEntries);
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 5;
 
   const indexOfLast = currentPage * itemsPerPage;
   const indexOfFirst = indexOfLast - itemsPerPage;
-  const currentItems = removal.slice(indexOfFirst, indexOfLast);
-  const numberOfPages = Math.ceil(removal.length / itemsPerPage);
+  const currentItems = removals.slice(indexOfFirst, indexOfLast);
+  const numberOfPages = Math.ceil(removals.length / itemsPerPage);
    
   return (
     <div>
@@ -44,7 +25,7 @@ function Entry() {
           <input type="search" required placeholder="Rechercher" />
         </label>
         <Button variant="primary" size="md">
-          <Plus /> Effectuer sortie
+          <Minus /> Enregistrer une sortie
         </Button>
         <Button variant="greyghost" size="md">
           <ListFilter /> Filtrer Sorties
@@ -60,26 +41,24 @@ function Entry() {
               <th>Date</th>
               <th>Quantité</th>
               <th>Destination</th>
-              <th>Référence</th>
               <th>Actions</th>
             </tr>
           </thead>
            <tbody className='transition-all duration-300 ease-in-out'>
              {currentItems.map((row, index) => (
-               <tr key={index} className="hover:bg-base-200 cursor-pointer">
+               <tr key={index} className="hover:bg-base-200">
                  <th>{row.product}</th>
                  <td>{row.category}</td>
                  <td>{row.reference}</td>
                  <td>{row.dateRegister.toLocaleDateString()}</td>
                  <td>{row.quantity}</td>
                  <td>{row.destination}</td> 
-                 <td>{row.reference}</td>
                  <td className='flex flex-direction-row gap-3'>
-                   <button className="btn btn-xs bg-transparent border border-0 hover:text-[color:var(--primary)]"
+                   <button className="btn btn-xs bg-transparent border border-0 hover:text-[color:var(--primary)] tooltip" data-tip='modifier'
                    >
                      <SquarePen/>
                    </button>
-                   <button className="btn btn-xs bg-transparent border border-0 hover:text-[color:red]"
+                   <button className="btn btn-xs bg-transparent border border-0 hover:text-[color:red] tooltip" data-tip='supprimer'
                    >
                      <Trash />
                    </button>
@@ -92,6 +71,7 @@ function Entry() {
             </tbody>
           </table>
       </div>
+      
       {/* pagination */}
       <div className="flex justify-center mt-4 space-x-2">
         <button 
@@ -109,7 +89,7 @@ function Entry() {
         <button 
           className="btn btn-sm bg-[var(--black)] text-[var(--brokenWhite)]" 
           onClick={() => setCurrentPage((p) => p + 1)}
-          disabled={indexOfLast >= removal.length}
+          disabled={indexOfLast >= removals.length}
         >
           Suivant
         </button>
@@ -118,4 +98,3 @@ function Entry() {
   )
 }
 
-export default Entry

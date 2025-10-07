@@ -2,7 +2,7 @@ import { NavLink } from 'react-router-dom';
 import { Archive } from 'lucide-react';
 import { Upload } from 'lucide-react';
 import { Download } from 'lucide-react';
-import { File } from 'lucide-react';
+// import { File } from 'lucide-react';
 import { Users } from 'lucide-react';
 import { Settings } from 'lucide-react';
 import { Home } from 'lucide-react';
@@ -12,7 +12,7 @@ const sidebar = [
     { wording: "Produits", icone: <Archive/>, path: '/products' },
     { wording: "Entrées stock", icone: <Upload/>, path: '/entries' },
     { wording: "Sorties stock", icone: <Download/>, path: '/removals' },
-    { wording: "Fiche de stock", icone: <File/>, path: '/sheet' },
+    // { wording: "Fiche de stock", icone: <File/>, path: '/sheet' },
     { wording: "Utilisateurs", icone: <Users/>, path: '/users' },
     { wording: "Paramétres", icone: <Settings/>, path: '/parameters' },
 ]
