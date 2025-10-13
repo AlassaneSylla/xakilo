@@ -16,7 +16,7 @@ export default function Card({title, totalProduct, color}: CardProps) {
                 {title === "Entrées du jour ↗︎" && "Livraisons reçues aujourd'hui"}
                 {title === "Sorties du jour ↘︎" && "Produits vendus ou sortis"}
                 {title === "Nombre total de produits" && "Stock global disponible"}
-                {title === "Produits en rupture" && "À réapprovisionner rapidement"}
+                {title === "Produits en rupture" && "À réapprovisionner rapidement"} 
               </div>
             </div>
           </div>

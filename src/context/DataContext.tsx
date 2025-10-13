@@ -28,6 +28,14 @@ type Removal = {
   reference: string;      
 };
 
+export type Invoice = {
+  reference: string;
+  date: Date;
+  client: string;
+  totalAmount: number;
+  paymentStatus: 'Payée' | 'En attente' | 'Annulée';
+};
+
 //difine the type contexte
 type DataContextType = {
   products: Product[];
@@ -36,6 +44,8 @@ type DataContextType = {
   setEntries: React.Dispatch<React.SetStateAction<Entry[]>>;
   removals: Removal[];
   setRemovals: React.Dispatch<React.SetStateAction<Removal[]>>;
+  invoices: Invoice[];
+  setInvoices: React.Dispatch<React.SetStateAction<Invoice[]>>;
 }
 
 //create the context
@@ -92,8 +102,15 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
       { product: 'Console PlayStation 5', category: 'Électronique', dateRegister: new Date('2025-10-03'), quantity: 4, destination: 'autre', reference: 'PROD-0015' }      
   ])
 
+  const [invoices, setInvoices] = useState<Invoice[]>([
+    { reference: 'INV001', date: new Date('2025-09-25'), client: 'John Doe', totalAmount: 250000, paymentStatus: 'Payée'},
+    { reference: 'INV002', date: new Date('2025-10-02'), client: 'Awa Ndiaye', totalAmount: 78000, paymentStatus: 'En attente' },
+    { reference: 'INV003', date: new Date('2025-09-15'), client: 'TechCorp', totalAmount: 450000, paymentStatus: 'Payée' },
+    { reference: 'INV004', date: new Date('2025-10-10'), client: 'TechCorp', totalAmount: 15000, paymentStatus: 'Payée' },
+  ]);
+
   return (
-    <DataContext.Provider value={{ products, setProducts, entries, setEntries, removals, setRemovals }}>
+    <DataContext.Provider value={{ products, setProducts, entries, setEntries, removals, setRemovals, invoices, setInvoices }}>
       {children}
     </DataContext.Provider>
   );

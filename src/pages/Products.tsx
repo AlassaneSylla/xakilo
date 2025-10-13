@@ -35,7 +35,7 @@ export default function Products() {
       <div className='overfow-x-auto'>
           <table className="table">
               <thead>
-                <tr className="bg-base-100">
+                <tr className="bg-base-200 text-[var(--black)]">
                   <th>🏷️ Produit</th>
                   <th>📂 Catégorie</th>
                   <th>🔢 Référence</th>
@@ -47,7 +47,7 @@ export default function Products() {
               <tbody className='transition-all duration-300 ease-in-out'>
                 {currentItems.map((row, index) => (
                   <tr key={index} className="hover:bg-base-200">
-                    <th className='capitalize'>{row.productName}</th>
+                    <td className='capitalize'>{row.productName}</td>
                     <td className='capitalize'>{row.category}</td>
                     <td>{row.reference}</td>
                     <td>{row.stock}</td>

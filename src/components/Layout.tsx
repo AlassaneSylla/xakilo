@@ -8,6 +8,7 @@ import Home from '../pages/Home'
 import Products from '../pages/Products'
 import Entries from '../pages/Entry'
 import Removals from '../pages/Removal'
+import SalesInvoices from '../pages/SalesInvoices'
 import StockSheet from '../pages/Sheet'
 import Parameters from '../pages/Parameters'
 import Users from '../pages/Users'
@@ -36,7 +37,7 @@ function Layout({ children }: LayoutProps) {
                     <Route path="/products" element={<Products />} />
                     <Route path="/entries" element={<Entries />} />
                     <Route path="/removals" element={<Removals />} />
-                    {/* <Route path="/sheet" element={<Sheet />} /> */}
+                    <Route path="/sales-invoices" element={<SalesInvoices />} />
                     <Route path="/users" element={<Users />} />
                     <Route path="/parameters" element={<Parameters />} />
                     <Route path="/products/:id/fiche-stock" element={<StockSheet />} />

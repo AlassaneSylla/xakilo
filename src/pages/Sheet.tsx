@@ -2,8 +2,8 @@ import { useLocation } from "react-router-dom"
 import { useData } from "../context/DataContext";
 import { LineChart, Line, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer } from "recharts";
 import { useState } from "react";
-
-import { Plus, Minus } from 'lucide-react';
+import { Plus, Minus, Download } from 'lucide-react';
+import Button from "../components/Button";
 
 
 type Stock = {
@@ -92,8 +92,8 @@ export default function Sheet() {
             <h1 className="text-2xl font-bold uppercase">Fiche de stock</h1>
             <div className='grid grid-cols-1 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-5 mb-12'>
                 <div>
-                    <div className="card w-96 bg-base-100 shadow-sm">
-                        <div className="card-body bg-gray-100">
+                    <div className="card w-110 bg-base-300 shadow-md">
+                        <div className="card-body">
                             <div className="flex justify-between">
                                 <h2 className="text-xl font-bold">Infos Produit</h2>
                             </div>
@@ -163,11 +163,23 @@ export default function Sheet() {
                 </div>
             </div>
 
+            <div className="grid grid-cols-3 gap-10 mb-8">
+                <Button variant="primary" size="md">
+                    <Plus /> Ajouter entée
+                </Button>
+                <Button variant="redghost" size="md">
+                    <Minus /> Enregistrer sortie
+                </Button>
+                <Button variant="greyghost" size="md">
+                    <Download /> Générer un rapport PDF
+                </Button>
+            </div>
+
             <div className='overfow-x-auto'>
                 <h2 className="text-xl font-bold">Historique des mouvements</h2>
                 <table className="table">
                     <thead>
-                        <tr className="bg-base-100">
+                        <tr className="bg-base-200 text-[var(--black)]">
                             <th>🔁 Type mouvement</th>
                             <th>📅 Date</th>
                             <th>📥/📤 Quantité</th>
@@ -178,13 +190,13 @@ export default function Sheet() {
                     <tbody className='transition-all duration-300 ease-in-out'>
                         {currentHistoryItems.map((item, index) => (
                             <tr key={index} className="hover:bg-base-200">
-                                <th className='flex '>
+                                <td className='flex '>
                                     { item.type === 'Entrée' ? (
                                         <><Plus className="text-red-500 mr-1" /> {item.type}</> 
                                     ) : ( 
                                         <><Minus className="text-green-500 mr-1" /> {item.type}</>
                                     )}
-                                </th>
+                                </td>
                                 <td>{item.date.toLocaleDateString()}</td>
                                 <td>{item.quantity}</td>
                                 <td className="capitalize">{item.supplier}</td>
