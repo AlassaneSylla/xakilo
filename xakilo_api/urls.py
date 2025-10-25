@@ -1,3 +1,4 @@
+from rest_framework_simplejwt.views import ( TokenObtainPairView, TokenRefreshView )
 from django.contrib import admin
 from django.urls import include, path
 
@@ -20,6 +21,11 @@ urlpatterns = [
     path('api/removals/', include('stock.urls')),
     path('api/users/', include('accounts.urls')),
     # path('api/logs/', include('logs.urls')),
+
+    # tokens
+    path('api/token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
+    path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
+
 
     #for requests documentation : http://127.0.0.1:8000/swagger/
     path('swagger/', schema_view.with_ui('swagger', cache_timeout=0), name='swagger-ui'),

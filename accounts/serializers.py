@@ -3,7 +3,15 @@ from .models import User
 
 
 class UserSerializer(serializers.ModelSerializer):
+    email = serializers.EmailField(required=True)
+
     class Meta:
         model = User
-        fields = '__all__'
-        read_only_fields = ('created_at', 'updated_at', 'last_login')
+        fields = [
+            'id', 'username', 'email', 'first_name', 'last_name',
+            'user_role', 'is_active', 'last_login', 'date_joined'
+        ]
+        read_only_fields = ('last_login', 'date_joined')
+        extra_kwargs = {
+            'password': {'write_only': True} 
+        }
