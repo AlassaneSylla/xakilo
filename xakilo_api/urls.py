@@ -15,10 +15,10 @@ schema_view = get_schema_view(
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/products/', include('products.urls')),
-    path('api/invoices/', include('billing.urls')),
-    path('api/invoices-items/', include('billing.urls')),
-    path('api/entries/', include('stock.urls')),
-    path('api/removals/', include('stock.urls')),
+    # path('api/invoices/', include('billing.urls')),
+    # path('api/invoices-items/', include('billing.urls')),
+    path('api/entries/', include('stock.urls_entry')),
+    path('api/removals/', include('stock.urls_removal')),
     path('api/users/', include('accounts.urls')),
     # path('api/logs/', include('logs.urls')),
 

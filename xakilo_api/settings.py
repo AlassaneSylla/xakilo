@@ -35,7 +35,6 @@ INSTALLED_APPS = [
     'rest_framework', 
     'rest_framework_simplejwt',
     'accounts',
-    'billing',
     'products',
     'stock',
 
@@ -57,6 +56,8 @@ REST_FRAMEWORK = {
 MIDDLEWARE = [
     # permet au back d'etre accesiible depuis le front
     'corsheaders.middleware.CorsMiddleware',
+    # permet d'avoir l'historique de certain models
+    'simple_history.middleware.HistoryRequestMiddleware',
 
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
