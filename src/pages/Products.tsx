@@ -1,5 +1,6 @@
-import { useData } from '../context/DataContext';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { getProducts } from '../api/productApi';
+
 import { Link } from 'react-router-dom';
 import { Search, Plus, ListFilter } from 'lucide-react';
 import Button from "../components/Button"
@@ -7,7 +8,13 @@ import { SquarePen, Trash } from 'lucide-react';
 
 
 export default function Products() {
-  const { products } = useData();
+  const [products, setProducts] = useState<any[]>([]);
+
+  useEffect(() => {
+    getProducts()
+      .then((data) => setProducts(data))
+      .catch((error) => console.error("Error GET products", error));
+  }, []);
 
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 5;
@@ -47,11 +54,11 @@ export default function Products() {
               <tbody className='transition-all duration-300 ease-in-out'>
                 {currentItems.map((row, index) => (
                   <tr key={index} className="hover:bg-base-200">
-                    <td className='capitalize'>{row.productName}</td>
+                    <td className='capitalize'>{row.product_name}</td>
                     <td className='capitalize'>{row.category}</td>
                     <td>{row.reference}</td>
                     <td>{row.stock}</td>
-                    <td>{row.unitPrice}</td>
+                    <td>{row.unit_price}</td>
                     <td className='flex flex-direction-row gap-6'>
                       <button className="btn btn-xs bg-transparent border border-0 hover:text-[color:var(--primary)]"
                       >
@@ -62,7 +69,7 @@ export default function Products() {
                         <Trash />
                       </button>
                       <Link 
-                        to={`/products/${row.reference}/fiche-stock`} 
+                        to={`/products/${row.id}/fiche-stock`} 
                         state={{ product: row }} //get product data
                         className="btn btn-xs btn-outline hover:text-[color:var(--brokenWhite)] hover:bg-[color:var(--black)]"
                       >

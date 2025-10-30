@@ -1,12 +1,22 @@
-import { useData } from '../context/DataContext';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { api } from '../api/api';
+
 import { Search, Plus, ListFilter } from 'lucide-react';
 import Button from "../components/Button"
 import { SquarePen, Trash } from 'lucide-react';
+import { getEntries } from '../api/entriesApi';
+import { data } from 'react-router-dom';
 
 
 export default function Entry() {
-  const { entries } = useData();
+  const [entries, setEntries] = useState<any[]>([]);
+
+  useEffect(() => {
+    getEntries()
+      .then((data) => setEntries(data))
+      .catch((error) => console.log("Error Get Entries", error))
+  }, []);
+
 
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 5;
@@ -47,10 +57,12 @@ export default function Entry() {
               <tbody className='transition-all duration-300 ease-in-out'>
                 {currentItems.map((row, index) => (
                   <tr key={index} className="hover:bg-base-200">
-                    <th>{row.product}</th>
+                    <th>{row.product_name}</th>
                     <td>{row.category}</td>
-                    <td>{row.reference}</td>
-                    <td>{row.dateRegister.toLocaleDateString()}</td>
+                    <td>{row.product_reference}</td>
+                    <td>
+                      {new Date(row.date_register).toLocaleDateString()}
+                    </td>
                     <td>{row.quantity}</td>
                     <td>{row.supplier}</td>
                     <td className='flex flex-direction-row gap-6'>

@@ -1,12 +1,19 @@
-import { useData } from '../context/DataContext';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { getRemovals } from '../api/removalsApi';
+
 import { Search, ListFilter, Minus } from 'lucide-react';
 import Button from "../components/Button";
 import { SquarePen, Trash, ReceiptText } from 'lucide-react';
 
 
 export default function Removal() {
-  const { removals } = useData();
+  const [removals, setRemovals] = useState<any[]>([]);
+
+  useEffect(() => {
+    getRemovals()
+      .then((data) => setRemovals(data))
+      .catch((error) => console.log('Error GGET Removals', error));
+  }, []);
 
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 5;
@@ -50,7 +57,9 @@ export default function Removal() {
                  <th>{row.product}</th>
                  <td>{row.category}</td>
                  <td>{row.reference}</td>
-                 <td>{row.dateRegister.toLocaleDateString()}</td>
+                 <td>
+                    {new Date(row.date_register).toLocaleDateString()}
+                  </td>
                  <td>{row.quantity}</td>
                  <td>{row.destination}</td> 
                  <td className='flex flex-direction-row gap-3'>
