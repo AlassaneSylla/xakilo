@@ -9,11 +9,14 @@ import { SquarePen, Trash } from 'lucide-react';
 
 export default function Products() {
   const [products, setProducts] = useState<any[]>([]);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
+    setLoading(true);
     getProducts()
       .then((data) => setProducts(data))
-      .catch((error) => console.error("Error GET products", error));
+      .catch((error) => console.error("Error GET products", error))
+      .finally(() => setLoading(false));
   }, []);
 
   const [currentPage, setCurrentPage] = useState(1);
@@ -23,6 +26,14 @@ export default function Products() {
   const indexOfFirst = indexOfLast - itemsPerPage;
   const currentItems = products.slice(indexOfFirst, indexOfLast);
   const numberOfPages = Math.ceil(products.length / itemsPerPage);
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-[50vh]">
+        <span className="loading loading-spinner loading-lg text-[var(--primary)]"></span>
+      </div>
+    );
+  }
    
   return (
     <div>

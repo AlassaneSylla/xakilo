@@ -1,5 +1,7 @@
 import { useContext, useState } from 'react';
 import { useNavigate } from "react-router-dom";
+import toast from "react-hot-toast";
+
 import { login as loginApi } from "../api/authApi";
 import { AuthContext } from "../context/AuthContext";
 import logo from '../assets/xakilo.png'
@@ -11,25 +13,33 @@ import logo from '../assets/xakilo.png'
 const Login = () => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
+  const [error, setError] = useState(''); 
+  const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const { login } = useContext(AuthContext);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
+    setLoading(true);
 
     try {
       const data = await loginApi(username, password);
       login(data.access);
 
       localStorage.setItem('refreshToken', data.refresh)
+      toast.success("Connexion réussie");
       navigate("/");
     } 
     catch (error: any) {
       console.error();
       setError('Utilisateur ou mot de passe incorrect');
+      toast.error("Erreur de connexion");
     }
+    finally {
+      setLoading(false);
+    }
+    console.log({error})
   };
 
   return (
@@ -49,7 +59,6 @@ const Login = () => {
                 </p>
             </div>
             <div>
-              {error && <p className="text-red-500 mb-2">{error}</p>}
               <form onSubmit={handleSubmit}>
                 <fieldset 
                   className="fieldset bg-base-200 border-base-300 rounded-box w-xs border p-5">
@@ -74,7 +83,17 @@ const Login = () => {
                   />
                   <p className='mt-2'>Mot de pass oublié</p>
 
-                  <button className="btn btn-neutral mt-4" type='submit'>Se Connecter</button>
+                  <button 
+                    className="btn mt-4 bg-[var(--black)] text-[var(--brokenWhite)]" 
+                    type='submit' 
+                    disabled={loading}
+                  >
+                    {loading ? (
+                      <span className="loading loading-spinner loading-sm text-[var(--primary)]"></span>
+                    ) : (
+                      "Se connecter"
+                    )}
+                  </button>
                 </fieldset>
               </form>
             </div>
