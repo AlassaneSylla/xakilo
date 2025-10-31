@@ -39,6 +39,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const logout = () => {
         localStorage.removeItem("access");
         localStorage.removeItem("refresh");
+        delete api.defaults.headers.common["Authorization"];
         setIsAuthenticated(false);
     };
 
