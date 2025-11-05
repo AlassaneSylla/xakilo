@@ -1,15 +1,39 @@
-import { useEffect, useState } from 'react';
-import { getProducts } from '../api/productApi';
-
+import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Search, Plus, ListFilter } from 'lucide-react';
-import Button from "../components/Button"
-import { SquarePen, Trash } from 'lucide-react';
+import { Search, Plus, ListFilter,  SquarePen, Trash } from 'lucide-react';
+import toast, { Toaster } from 'react-hot-toast';
 
+import { getProducts, postProduct, updateProduct, deleteProduct } from '../api/productApi';
+import Modal from '../components/Modal';
+import Button from "../components/Button"
+import Form from '../components/Form';
+
+
+interface ProductForm {
+  product_name: string;
+  category: string;
+  stock: number;
+  unit_price: number;
+  purchase_price: number;
+  alert: number;
+}
 
 export default function Products() {
+  const [selectedProduct, setSelectedProduct] = useState<any | null>(null);
+  const modalRef = useRef<{ open: () => void; close: () => void }>(null);
+
   const [products, setProducts] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
+
+  const [formData, setFormData] = useState<ProductForm>({
+    product_name: "",
+    category: "",
+    stock: 0,
+    unit_price: 0,
+    purchase_price: 0,
+    alert: 0,
+  });
+  const [selectedProductId, setSelectedProductId] = useState<number | null>(null);
 
   useEffect(() => {
     setLoading(true);
@@ -34,9 +58,97 @@ export default function Products() {
       </div>
     );
   }
+
+  //formulaire pour ajout et modifier
+  const fields = [
+    { name: "product_name", label: "Produit", required: true, disabled: true },
+    { name: "category", label: "Catégorie", disabled: true },
+    { name: "stock", label: "Stock", type: "number", disabled: true },
+    { name: "unit_price", label: "Prix unitaire", type: "number" },
+    { name: "purchase_price", label: "Prix d'achat", type: "number" },
+    { name: "alert", label: "Alerte de stock", type: "number" }
+  ];
+
+  const CONFIRM_TOAST_ID = "delete-confirm";
+  const handleDelete = (id: number) => {
+
+    toast.custom((t) => (
+      <div
+        className={`${
+          t.visible ? 'animate-custom-enter' : 'animate-custom-leave'
+        } max-w-md w-full bg-white shadow-lg rounded-lg pointer-events-auto flex ring-1 ring-gray-300 ring-opacity-3`}
+      >
+      <div className="flex-1 w-0 p-4">
+        <div className="flex items-start">
+          <div className="flex-shrink-0 pt-0.5">
+            <Trash />
+          </div>
+          <div className="ml-3 flex-1">
+            <p className="text-sm font-medium text-gray-900">
+              Voulez-vous supprimer ce produit ?
+            </p>
+            {/* <p className="mt-1 text-sm text-gray-500">
+              Vous ne pouvez plus recuperer
+            </p> */}
+          </div>
+          <div>
+            <button
+            className="btn btn-xs btn-error"
+            onClick={() => {
+              deleteProduct(id)
+                .then(() => {
+                  setProducts(products.filter(p => p.id !== id)); 
+                  toast.success("Produit supprimé !");
+                })
+                .catch(() => toast.error("Erreur lors de la suppression"));
+              toast.dismiss(CONFIRM_TOAST_ID); 
+            }}
+          >
+            Oui
+          </button>
+          </div>
+        </div>
+      </div>
+    <div className="flex border-l border-gray-200">
+      <button
+        onClick={() => toast.dismiss(CONFIRM_TOAST_ID)}
+        className="w-full border border-transparent rounded-none rounded-r-lg p-4 flex items-center justify-center text-sm font-medium text-[var(--primary)] hover:text-cyan-400 hover:cursor-pointer focus:outline-none focus:ring-2 focus:ring-cyan-400"
+      >
+        Non
+      </button>
+    </div>
+  </div>
+    ), { id: CONFIRM_TOAST_ID });
+  };
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value, type } = e.target;
+    setFormData((prev) => ({
+      ...prev,
+      [name]: type === "number" ? Number(value) : value,
+    }));
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (selectedProductId !== null) {
+    updateProduct(selectedProductId, formData)
+      .then((updated) => {
+        // mettre à jour la liste localement
+        setProducts((prev) =>
+          prev.map((p) => (p.id === selectedProductId ? updated : p))
+        );
+        modalRef.current?.close();
+      })
+      .catch((err) => console.error("Erreur update :", err));
+    }
+  };
+
+
    
   return (
     <div>
+      <Toaster position="top-center" reverseOrder={false} />
       <h1 className="text-2xl font-bold uppercase">Liste Produits</h1>
       <div className="grid grid-cols-3 gap-10 mb-8">
           <label className="input">
@@ -67,25 +179,53 @@ export default function Products() {
                   <tr key={index} className="hover:bg-base-200">
                     <td className='capitalize'>{row.product_name}</td>
                     <td className='capitalize'>{row.category}</td>
-                    <td>{row.reference}</td>
+                    <td>{row.product_ref}</td>
                     <td>{row.stock}</td>
                     <td>{row.unit_price}</td>
                     <td className='flex flex-direction-row gap-6'>
-                      <button className="btn btn-xs bg-transparent border border-0 hover:text-[color:var(--primary)]"
+                      <button 
+                        className="btn btn-xs bg-transparent border border-0 hover:text-[color:var(--primary)]"
+                        onClick={() => {
+                          setSelectedProductId(row.id);           
+                          setFormData({                            
+                            product_name: row.product_name,
+                            category: row.category,
+                            stock: row.stock,
+                            unit_price: row.unit_price,
+                            purchase_price: row.purchase_price,
+                            alert: row.alert,
+                          });
+                          modalRef.current?.open();          
+                        }}
                       >
-                        <SquarePen/>
+                        <SquarePen />
                       </button>
-                      <button className="btn btn-xs bg-transparent border border-0 hover:text-[color:red]"
+
+                      <button 
+                        className="btn btn-xs bg-transparent border border-0 hover:text-[color:red]"
+                        onClick={() => handleDelete(row.id)}
                       >
                         <Trash />
                       </button>
+                      
+                      {/* MOdal pour modifier */}
+                      <Modal ref={modalRef} title="Modifier le produit">
+                        <Form 
+                          fields={fields} 
+                          values={formData} 
+                          onChange={handleChange} 
+                          onSubmit={handleSubmit} 
+                        />
+                      </Modal>
+
                       <Link 
                         to={`/products/${row.id}/fiche-stock`} 
-                        state={{ product: row }} //get product data
+                        state={{ product: row }} 
                         className="btn btn-xs btn-outline hover:text-[color:var(--brokenWhite)] hover:bg-[color:var(--black)]"
                       >
                         Voir Fiche
                       </Link>
+                      
                     </td>
                   </tr>
                 ))}

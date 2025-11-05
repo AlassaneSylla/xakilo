@@ -7,6 +7,7 @@ export const api = axios.create({
     }
 });
 
+
 /**
  * Ajouter le token a chaque requete
  */

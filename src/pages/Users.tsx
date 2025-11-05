@@ -57,18 +57,32 @@ const UsersPage = () => {
                   <th>✉️ Email</th>
                   <th>⏰ Derniére connexion</th>
                   <th>🛡️ Rôle</th>
+                  <th>Inscription</th>
                   <th>⚙️ Actions</th>
                 </tr>
               </thead>
               <tbody className='transition-all duration-300 ease-in-out'>
                 {currentItems.map((row, index) => (
                   <tr key={index} className="hover:bg-base-200">
-                    <td className='capitalize'>{row.first_name}</td>
-                    <td className='capitalize'>{row.last_name}</td>
-                    <td>{row.email}</td>
-                    <td>{row.last_login ? new Date(row.last_login).toLocaleString() : "Jamais"}</td>
-                    <td>{getUserRole(row)}</td>
-                    <td className='flex flex-direction-row gap-6'>
+                    <td className='capitalize'>
+                      {row.first_name}
+                    </td>
+                    <td className='capitalize'>
+                      {row.last_name}
+                    </td>
+                    <td>
+                      {row.email}
+                    </td>
+                    <td>
+                      {row.last_login ? new Date(row.last_login).toLocaleString() : "Jamais"}
+                    </td>
+                    <td>
+                        {getUserRole(row)}
+                    </td>
+                    <td>
+                      {row.date_joined ? new Date(row.date_joined).toLocaleDateString() : "Inconnue"}
+                    </td>
+                    <td className='flex flex-direction-row gap-4'>
                       <button className="btn btn-xs bg-transparent border border-0 hover:text-[color:var(--primary)]"
                       >
                         <SquarePen/>

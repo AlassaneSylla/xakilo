@@ -28,6 +28,10 @@ h2 {
     padding-bottom: 2rem;
 }
 
+h3 {
+    color: var(--primary);
+}
+
 
 
 
