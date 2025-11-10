@@ -1,3 +1,4 @@
+from django.db.models import F, OuterRef, Subquery
 from django.shortcuts import get_object_or_404
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated, IsAdminUser
@@ -8,6 +9,7 @@ from django.db import models
 from yaml import serialize
 
 from .models import Product
+from stock.models.entry import Entry
 from .serializers import ProductSerializer
 
 
@@ -84,9 +86,17 @@ def delete_product(request, id):
 def low_stock_product(request):
     """
     Retourne les produits dont le stock est faible
+    le dernier fournisseur et la date
     """
-    low_stock = Product.objects.filter(stock__lte=models.F('alert')).order_by('stock')
+    last_entry = Entry.objects.filter(product=OuterRef('pk')).order_by('-date_register')
+    
+    low_stock = Product.objects.filter(stock__lte=F('alert')).annotate(
+        last_supplier=Subquery(last_entry.values('supplier')[:1]),          
+        last_entry_date=Subquery(last_entry.values('date_register')[:1])    
+    ).order_by('stock')
+    
     serializer = ProductSerializer(low_stock, many=True)
+
     return Response({
         "count": low_stock.count(),
         "products": serializer.data
