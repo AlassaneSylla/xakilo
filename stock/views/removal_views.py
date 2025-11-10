@@ -1,3 +1,4 @@
+from django.http import JsonResponse
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated, IsAdminUser
 from django.shortcuts import get_object_or_404
@@ -149,13 +150,24 @@ def patch_removal(request, id):
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-@api_view(['DELETE'])
-@permission_classes([IsAdminUser])
-def delete_removal(request, id):
-    """
-    Delete an removal by an admin only
-    """
-    removal = get_object_or_404(Removal, pk=id)
-    removal.delete()
-    return Response({"message": 'removal was deleted'}, status=status.HTTP_204_NO_CONTENT)
+def get_removals_by_product(request, product_id):
+    # Récupère tous les removals associés à ce produit via removal_items
+    removal_items = RemovalItem.objects.filter(product_id=product_id)
+    removal_ids = removal_items.values_list('removal_id', flat=True).distinct()
+    
+    removals = Removal.objects.filter(id__in=removal_ids).order_by('-date_register')
+    serializer = RemovalSerializer(removals, many=True)
+    
+    return JsonResponse(serializer.data, safe=False)
+
+
+# @api_view(['DELETE'])
+# @permission_classes([IsAdminUser])
+# def delete_removal(request, id):
+#     """
+#     Delete an removal by an admin only
+#     """
+#     removal = get_object_or_404(Removal, pk=id)
+#     removal.delete()
+#     return Response({"message": 'removal was deleted'}, status=status.HTTP_204_NO_CONTENT)
     

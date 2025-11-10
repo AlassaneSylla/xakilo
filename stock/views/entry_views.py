@@ -1,3 +1,4 @@
+from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated, IsAdminUser
@@ -39,11 +40,18 @@ def get_entry(request, id):
 @permission_classes([IsAuthenticated])
 def post_entry(request):
     """
-    Create entry
+    Create entry and update the stock
     """
     serializer = EntrySerializer(data=request.data)
     if serializer.is_valid():
-        serializer.save(created_by=request.user) #enregistrer le user connecte
+        entry = serializer.save(created_by=request.user) 
+
+        # mise a jour du stock
+        product = entry.product
+        if product:
+            product.stock += entry.quantity
+            product.save()
+
         return Response(serializer.data, status=status.HTTP_201_CREATED)
     
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
@@ -74,3 +82,10 @@ def delete_entry(request, id):
     entry = get_object_or_404(Entry, pk=id)
     entry.delete()
     return Response({"message": "entry deleted"}, status=status.HTTP_204_NO_CONTENT)
+
+
+# recuperer les entress d'1 produit
+def get_entries_by_product(request, product_id):
+    entries = Entry.objects.filter(product_id=product_id).order_by('date_register')
+    serializer = EntrySerializer(entries, many=True)
+    return JsonResponse(serializer.data, safe=False)

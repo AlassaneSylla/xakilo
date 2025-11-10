@@ -4,6 +4,8 @@ from rest_framework.permissions import IsAuthenticated, IsAdminUser
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework import status
+from django.db import models
+from yaml import serialize
 
 from .models import Product
 from .serializers import ProductSerializer
@@ -15,7 +17,7 @@ def get_products(request):
     """
     Get all product
     """
-    products = Product.objects.all().order_by('id')
+    products = Product.objects.all().order_by('-id') # "-" devant donne le plus recent 
     serializer = ProductSerializer(products, many=True)
     return Response(serializer.data, status=status.HTTP_200_OK)
 
@@ -75,3 +77,17 @@ def delete_product(request, id):
     product = get_object_or_404(Product, pk=id)
     product.delete()
     return Response({"message": "produit supprime"}, status=status.HTTP_204_NO_CONTENT)
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def low_stock_product(request):
+    """
+    Retourne les produits dont le stock est faible
+    """
+    low_stock = Product.objects.filter(stock__lte=models.F('alert')).order_by('stock')
+    serializer = ProductSerializer(low_stock, many=True)
+    return Response({
+        "count": low_stock.count(),
+        "products": serializer.data
+    })

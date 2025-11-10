@@ -7,6 +7,7 @@ urlpatterns = [
     path('add/', views.post_entry),
     path('<int:id>/update/', views.patch_entry),
     path('<int:id>/delete/', views.delete_entry),
+    path('product/<int:product_id>/', views.get_entries_by_product),
 
     # path('', views.get_removals), 
     # path('<int:id>/', views.get_removal),

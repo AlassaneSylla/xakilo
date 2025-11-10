@@ -1,5 +1,7 @@
 from django.db import models
 
+from accounts.models import User
+
 
 class Product(models.Model):
     CATEGORY_CHOICES = [
@@ -14,13 +16,21 @@ class Product(models.Model):
     unit_price = models.DecimalField(max_digits=12, decimal_places=0, blank=True, null=True)
     purchase_price = models.DecimalField(max_digits=12, decimal_places=0, blank=True, null=True)
     alert = models.IntegerField(default=10)
+    created_by = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='products_created'
+    )
 
     class Meta:
         db_table = 'products'
 
     def save(self, *args, **kwargs):
         if not self.product_ref:
-            count = Product.objects.count() + 1
+            last_product = Product.objects.order_by('-id').first()
+            count = (last_product.id + 1) if last_product else 1
             self.product_ref = f"PROD-{count:04d}"
         super().save(*args, **kwargs)
 

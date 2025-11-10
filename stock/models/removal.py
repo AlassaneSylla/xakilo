@@ -53,8 +53,8 @@ class Removal(models.Model):
             self.invoice_date_created = timezone.now()
 
         # calcule du total
-        if self.destination == 'vente' and self.items.exists():
-            total = sum(item.total_price for item in self.items.all())
+        if self.destination == 'vente' and self.items.exists(): 
+            total = sum(item.total_price for item in self.items.all()) 
             self.invoice_total_amount = total
 
         # enregistrer a nouveau les data

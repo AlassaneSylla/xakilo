@@ -7,4 +7,5 @@ urlpatterns = [
     path('add/', views.post_product),
     path('<int:id>/update/', views.patch_product),
     path('<int:id>/delete/', views.delete_product),
+    path('low-stock/', views.low_stock_product), #stock faible
 ]
