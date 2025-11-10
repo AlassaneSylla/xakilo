@@ -1,7 +1,8 @@
 import { useContext, useEffect, useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom';
+import { data, Link, useNavigate } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
 import { getUserById } from '../api/usersApi'
+import { getLowStockProducts } from '../api/productApi';
 
 import logo from '../assets/xakilo_sm.png'
 import userIcon from '../assets/circle-user-round.svg'
@@ -12,6 +13,28 @@ function Header() {
   const [currentUser, setCurrentUser] = useState<any>(null);
   const { logout } = useContext(AuthContext);
   const navigate = useNavigate();
+  const [lowStock, setLowStock] = useState(0);
+  const [lowStockProduct, setLowStockProduct] = useState([]);
+
+  useEffect(() => {
+    const fetLowStock = async () => {
+      getLowStockProducts()
+        .then(
+          (data) => setLowStock(data.count),
+          (data) => setLowStockProduct(data.products) 
+        )
+        .catch((err) => console.error("Erreur lors de la recuperation : ", err));
+      // try {
+      //   const data = getLowStockProducts();
+      //   setLowStock(data.count);
+      //   setCurrentUser(data.products);
+      // } catch (error) {
+      //   console.error("Erreur lors de la recuperation : ", error);
+      // }
+    }
+
+    fetLowStock();
+  }, []);
 
   useEffect(() => {
     // get the id from the token
@@ -57,20 +80,20 @@ function Header() {
           <div className="indicator">
             <Bell size={20} />
             <span className="badge badge-sm indicator-item bg-red-500 text-white">
-              8
+              {lowStock}
             </span>
           </div>
         </div>
         <div
           tabIndex={0}
-          className="card card-compact dropdown-content bg-base-200 z-10 mt-3 w-38 shadow"
+          className="card card-compact dropdown-content bg-base-200 z-10 mt-3 w-39 shadow"
         >
           <div className="card-body">
-            <span className="text-md font-bold">8 alertes stock</span>
-            <span className="text-sm text-gray-500">alert 1</span>
+            <span className="text-md font-bold">{`${lowStock} alerte(s) stock`}</span>
+            {/* <span className="text-sm text-gray-500">alert 1</span> */}
             <div className="card-actions">
               <Link 
-                to={`/products/`} 
+                to={`/low-stock/`} 
                 // state={{ product: row }} 
                 className="btn btn-xs btn-outline hover:text-[color:var(--brokenWhite)] hover:bg-[color:var(--black)]"
               >

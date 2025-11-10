@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import Button from "./Button";
 
 type Field = {
@@ -17,6 +17,7 @@ type FormProps = {
   onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   onSubmit: (e: React.FormEvent) => void;
   submitLabel?: string;
+  loading: boolean;
 };
 
 export default function Form({
@@ -26,6 +27,8 @@ export default function Form({
   onSubmit,
   submitLabel = "Enregistrer",
 }: FormProps) {
+  const [loading, setLoading] = useState();
+
   return (
     <form onSubmit={onSubmit} className="space-y-4 p-4 rounded-lg shadow bg-base-200">
       {fields.map((field) => (
@@ -35,7 +38,7 @@ export default function Form({
             type={field.type || "text"}
             name={field.name}
             placeholder={field.placeholder || ""}
-            value={values[field.name] || ""}
+            value={values[field.name] ?? ""}
             required={field.required}
             onChange={onChange}
             className={`input input-bordered w-full py-1 ${
@@ -45,8 +48,8 @@ export default function Form({
         </div>
       ))}
       <div className="flex justify-end">
-        <Button type="submit" variant="primary" size="sm">
-          {submitLabel}
+        <Button type="submit" variant="primary" size="sm" disabled={loading}>
+          {loading ? 'Chargement...' : submitLabel || 'Enregistrer'}
         </Button>
       </div>
     </form>

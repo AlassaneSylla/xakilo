@@ -1,3 +1,4 @@
+import Products from "../pages/Products";
 import { api } from "./api";
 
 export const getProducts = async () => {
@@ -22,5 +23,11 @@ export const updateProduct = async (id: number, data: any) => {
 
 export const deleteProduct = async (id: number) => {
     const res = await api.delete(`products/${id}/delete/`);
+    return res.data;
+}
+
+//recupere les stocks faibles
+export const getLowStockProducts = async () => {
+    const res = await api.get(`products/low-stock/`);
     return res.data;
 }

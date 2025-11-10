@@ -6,9 +6,6 @@ import { login as loginApi } from "../api/authApi";
 import { AuthContext } from "../context/AuthContext";
 import logo from '../assets/xakilo.png'
 
-// export interface LoginProps {
-//   onLogin: () => void;
-// }
 
 const Login = () => {
   const [username, setUsername] = useState('');

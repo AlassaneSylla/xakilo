@@ -1,20 +1,47 @@
+import { useEffect, useState } from 'react';
+
+import { getProducts, getLowStockProducts } from '../api/productApi';
 import Button from '../components/Button'
 import Card from '../components/Card'
 import StockFlowChart from '../components/StockFlowChart'
 import PieChart from '../components/PieChart';
 import InpuOutput from '../components/InputOutput';
 
+
 function Home() {
+    const [product, setProduct] = useState();
+    const [count, setCount] = useState<number>(0);
+    const [lowStock, setLowStock] = useState<number>(0);
+
+    useEffect(() => {
+        const fetchProducts = async () => {
+            try {
+                const data = await getProducts();
+                setProduct(data);
+                setCount(data.length);
+            } catch (error) {
+                console.error("Erreur lors du chargement des produits : ", error)
+            }
+        };
+        fetchProducts();
+    }, []);
+
+    useEffect(() => {
+        getLowStockProducts()
+            .then((data) => setLowStock(data.count))
+            .catch((err) => console.error(err));
+    }, []);
+
     return (
         <div>
             <h1 className="text-3xl font-bold uppercase">Bienvenu(e) Alassane</h1>
 
             {/* stock statistics */}
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 mb-12">
-                <Card title='Nombre total de produits' totalProduct={62} color='badge-accent'/>
+                <Card title='Nombre total de produits' totalProduct={count} color='badge-accent'/>
                 <Card title="Entrées du jour ↗︎" totalProduct={6} color='badge-success'/>
                 <Card title='Sorties du jour ↘︎' totalProduct={23} color='badge-warning'/>
-                <Card title='Produits en rupture' totalProduct={6} color='badge-error'/>
+                <Card title='Produits en rupture' totalProduct={lowStock} color='badge-error'/>
             </div>
 
             {/* stock charts */}

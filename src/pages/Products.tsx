@@ -18,13 +18,21 @@ interface ProductForm {
   alert: number;
 }
 
+type NewProductForm = {
+  product_name: string;
+  category: string;
+  unit_price: number;
+  purchase_price: number;
+  alert: number;
+};
+
+
 export default function Products() {
   const [selectedProduct, setSelectedProduct] = useState<any | null>(null);
-  const modalRef = useRef<{ open: () => void; close: () => void }>(null);
-
+  const editModalRef = useRef<{ open: () => void; close: () => void }>(null);
+  const addModalRef = useRef<{ open: () => void; close: () => void }>(null);
   const [products, setProducts] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
-
   const [formData, setFormData] = useState<ProductForm>({
     product_name: "",
     category: "",
@@ -33,6 +41,13 @@ export default function Products() {
     purchase_price: 0,
     alert: 0,
   });
+  const [newProductFormData, setNewProductFormData] = useState<NewProductForm>({
+    product_name: "",
+    category: "",
+    unit_price: 0,
+    purchase_price: 0,
+    alert: 0,
+  })
   const [selectedProductId, setSelectedProductId] = useState<number | null>(null);
 
   useEffect(() => {
@@ -66,12 +81,20 @@ export default function Products() {
     { name: "stock", label: "Stock", type: "number", disabled: true },
     { name: "unit_price", label: "Prix unitaire", type: "number" },
     { name: "purchase_price", label: "Prix d'achat", type: "number" },
-    { name: "alert", label: "Alerte de stock", type: "number" }
+    { name: "alert", label: "Seuil d'alerte", type: "number" }
+  ];
+
+  //formulaire pour ajout et modifier
+  const addProductfields = [
+    { name: "product_name", label: "Produit", required: true },
+    { name: "category", label: "Catégorie", required: true },
+    { name: "unit_price", label: "Prix unitaire", type: "number", required: true },
+    { name: "purchase_price", label: "Prix d'achat", type: "number", required: true },
+    { name: "alert", label: "Seuil d'alerte", type: "number", required: true }
   ];
 
   const CONFIRM_TOAST_ID = "delete-confirm";
   const handleDelete = (id: number) => {
-
     toast.custom((t) => (
       <div
         className={`${
@@ -121,7 +144,8 @@ export default function Products() {
     ), { id: CONFIRM_TOAST_ID });
   };
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  //ppour modal edit
+  const handleEditChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value, type } = e.target;
     setFormData((prev) => ({
       ...prev,
@@ -129,23 +153,65 @@ export default function Products() {
     }));
   };
 
+  //update produit
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    setLoading(true);
+
     if (selectedProductId !== null) {
-    updateProduct(selectedProductId, formData)
-      .then((updated) => {
-        // mettre à jour la liste localement
-        setProducts((prev) =>
-          prev.map((p) => (p.id === selectedProductId ? updated : p))
-        );
-        modalRef.current?.close();
-      })
-      .catch((err) => console.error("Erreur update :", err));
+      updateProduct(selectedProductId, formData)
+        .then((updated) => {
+          // maj produit
+          setProducts((prev) =>
+            prev.map((p) => (p.id === selectedProductId ? updated : p))
+          );
+          setTimeout(() => {
+            editModalRef.current?.close();
+            setLoading(false);
+          }, 800);
+          toast.success("Produit mis à jour avec succès !");
+        })
+        .catch((err) => {
+          console.error("Erreur update :", err);
+          toast.error("Échec de la mise à jour du produit !");
+          setLoading(false);
+        });
+    } else {
+      setLoading(false);
     }
   };
 
+  // Pour le modal d’ajout
+  const handleAddChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value, type } = e.target;
+    setNewProductFormData((prev) => ({
+      ...prev,
+      [name]: type === "number" ? Number(value) : value,
+    }));
+  };
 
-   
+  //ajout produit
+  const handleAddProduct = async () => {
+    setLoading(true);
+    try {
+      const newProduct = await postProduct(newProductFormData);
+
+      //mettre a jour la liste apres ajout
+      setProducts((prev) => [newProduct, ...prev])
+
+      setTimeout(() => {
+        addModalRef.current?.close();
+        setLoading(false);
+      }, 800);
+
+      toast.success("Produit ajouté avec succès !");
+    } catch (error) {
+      console.error("Erreur lors de l'ajout du produit :", error);
+      toast.error("Erreur lors de l'ajout du produit !");
+      setLoading(false);
+    }
+  };
+
   return (
     <div>
       <Toaster position="top-center" reverseOrder={false} />
@@ -155,83 +221,112 @@ export default function Products() {
               <Search />
               <input type="search" required placeholder="Rechercher" />
           </label>
-          <Button variant="primary" size="md">
-              <Plus /> Ajouter produit
+          <Button 
+            id='add'
+            variant="primary" 
+            size="md"
+            onClick={() => {          
+              setNewProductFormData({                            
+                product_name: "",
+                category: "",
+                unit_price: 0,
+                purchase_price: 0,
+                alert: 0,
+              });
+              addModalRef.current?.open();          
+            }}
+          >
+            <Plus /> Ajouter produit
           </Button>
+
+          {/* Ajouter un produit */}
+          <Modal ref={addModalRef} title="AJOUTER PRODUIT">
+            <Form 
+              fields={addProductfields} 
+              values={newProductFormData} 
+              onChange={handleAddChange} 
+              onSubmit={handleAddProduct} 
+              submitLabel='Ajouter'
+              loading={loading}
+            />
+          </Modal>
+
           <Button variant="greyghost" size="md">
               <ListFilter /> Filtrer Produits
           </Button>
       </div>
       <div className='overfow-x-auto'>
-          <table className="table">
-              <thead>
-                <tr className="bg-base-200 text-[var(--black)]">
-                  <th>🏷️ Produit</th>
-                  <th>📂 Catégorie</th>
-                  <th>🔢 Référence</th>
-                  <th>📦 Stock</th>
-                  <th>💰 Prix Unitaire</th>
-                  <th>Actions</th>
-                </tr>
-              </thead>
-              <tbody className='transition-all duration-300 ease-in-out'>
-                {currentItems.map((row, index) => (
-                  <tr key={index} className="hover:bg-base-200">
-                    <td className='capitalize'>{row.product_name}</td>
-                    <td className='capitalize'>{row.category}</td>
-                    <td>{row.product_ref}</td>
-                    <td>{row.stock}</td>
-                    <td>{row.unit_price}</td>
-                    <td className='flex flex-direction-row gap-6'>
-                      <button 
-                        className="btn btn-xs bg-transparent border border-0 hover:text-[color:var(--primary)]"
-                        onClick={() => {
-                          setSelectedProductId(row.id);           
-                          setFormData({                            
-                            product_name: row.product_name,
-                            category: row.category,
-                            stock: row.stock,
-                            unit_price: row.unit_price,
-                            purchase_price: row.purchase_price,
-                            alert: row.alert,
-                          });
-                          modalRef.current?.open();          
-                        }}
-                      >
-                        <SquarePen />
-                      </button>
-
-                      <button 
-                        className="btn btn-xs bg-transparent border border-0 hover:text-[color:red]"
-                        onClick={() => handleDelete(row.id)}
-                      >
-                        <Trash />
-                      </button>
-                      
-                      {/* MOdal pour modifier */}
-                      <Modal ref={modalRef} title="Modifier le produit">
-                        <Form 
-                          fields={fields} 
-                          values={formData} 
-                          onChange={handleChange} 
-                          onSubmit={handleSubmit} 
-                        />
-                      </Modal>
-
-                      <Link 
-                        to={`/products/${row.id}/fiche-stock`} 
-                        state={{ product: row }} 
-                        className="btn btn-xs btn-outline hover:text-[color:var(--brokenWhite)] hover:bg-[color:var(--black)]"
-                      >
-                        Voir Fiche
-                      </Link>
-                      
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-          </table>
+        <table className="table">
+          <thead>
+            <tr className="bg-base-200 text-[var(--black)]">
+              <th>🏷️ Produit</th>
+              <th>📂 Catégorie</th>
+              <th>🔢 Référence</th>
+              <th>📦 Stock</th>
+              <th>💰 Prix Unitaire</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody className='transition-all duration-300 ease-in-out'>
+            {currentItems.map((row, index) => (
+              <tr key={index} className="hover:bg-base-200">
+                <td className='capitalize'>{row.product_name}</td>
+                <td className='capitalize'>{row.category}</td>
+                <td>{row.product_ref}</td>
+                <td>{row.stock}</td>
+                <td>{row.unit_price}</td>
+                <td className='flex flex-direction-row gap-6'>
+                  <button 
+                    className="btn btn-xs bg-transparent border border-0 hover:text-[color:var(--primary)]"
+                    id='edit'
+                    onClick={() => {
+                      setSelectedProductId(row.id);           
+                      setFormData({                            
+                        product_name: row.product_name,
+                        category: row.category,
+                        stock: row.stock,
+                        unit_price: row.unit_price,
+                        purchase_price: row.purchase_price,
+                        alert: row.alert,
+                      });
+                      editModalRef.current?.open();          
+                    }}
+                  >
+                    <SquarePen />
+                  </button>
+                  <button 
+                    className="btn btn-xs bg-transparent border border-0 hover:text-[color:red]"
+                    onClick={() => handleDelete(row.id)}
+                  >
+                    <Trash />
+                  </button>
+                  
+                  {/* MOdal pour modifier */}
+                  <Modal ref={editModalRef} title="Modifier le produit">
+                    <Form 
+                      fields={fields} 
+                      values={formData} 
+                      onChange={handleEditChange} 
+                      onSubmit={handleSubmit}
+                      submitLabel='Mettre à jour' 
+                      loading={loading}
+                    />
+                  </Modal>
+                  <Link 
+                    to={`/products/${row.id}/fiche-stock`} 
+                    state={{ product: row }} 
+                    className="btn btn-xs btn-outline hover:text-[color:var(--brokenWhite)] hover:bg-[color:var(--black)]"
+                  >
+                    Voir Fiche
+                  </Link>
+                  
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
       </div>
+      
       {/* pagination */}
       <div className="flex justify-center mt-4 space-x-2">
         <button 

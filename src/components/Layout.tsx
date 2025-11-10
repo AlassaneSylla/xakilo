@@ -12,6 +12,7 @@ import SalesInvoices from '../pages/SalesInvoices'
 import StockSheet from '../pages/Sheet'
 import Parameters from '../pages/Parameters'
 import Users from '../pages/Users'
+import AlertList from '../pages/AlertsListe';
 
 interface LayoutProps {
   children: ReactNode
@@ -19,38 +20,33 @@ interface LayoutProps {
 
 function Layout({ children }: LayoutProps) {
     return (
-        <div className="h-screen w-screen grid grid-rows-[auto_1fr_auto]">
-
-            <div className="h-16 shrink-0">
-                <Header />
-            </div>
-
-            <div className="flex flex-1 overflow-hidden">
-
-              <div className="h-full w-64 shrink-0">
-                <Sidebar />
-              </div>
-
-              <main className="flex-1 overflow-y-auto p-4">
-                <Routes>
-                    <Route path="/" element={<Home />} />
-                    <Route path="/products" element={<Products />} />
-                    <Route path="/entries" element={<Entries />} />
-                    <Route path="/removals" element={<Removals />} />
-                    <Route path="/sales-invoices" element={<SalesInvoices />} />
-                    <Route path="/users" element={<Users />} />
-                    <Route path="/parameters" element={<Parameters />} />
-                    <Route path="/products/:id/fiche-stock" element={<StockSheet />} />
-                </Routes>
-                {children}
-              </main>
-            </div>
-
-            <div className="h-12 shrink-0">
-                <Footer />
-            </div>
-
+      <div className="h-screen w-screen grid grid-rows-[auto_1fr_auto]">
+        <div className="h-16 shrink-0">
+            <Header />
         </div>
+        <div className="flex flex-1 overflow-hidden">
+          <div className="h-full w-64 shrink-0">
+            <Sidebar />
+          </div>
+          <main className="flex-1 overflow-y-auto p-4">
+            <Routes>
+              <Route path="/" element={<Home />} />
+              <Route path="/products" element={<Products />} />
+              <Route path="/entries" element={<Entries />} />
+              <Route path="/removals" element={<Removals />} />
+              <Route path="/sales-invoices" element={<SalesInvoices />} />
+              <Route path="/users" element={<Users />} />
+              <Route path="/parameters" element={<Parameters />} />
+              <Route path="/products/:id/fiche-stock" element={<StockSheet />} />
+              <Route path="/low-stock" element={<AlertList />} />
+            </Routes>
+            {children}
+          </main>
+        </div>
+        <div className="h-12 shrink-0">
+            <Footer />
+        </div>
+      </div>
     );
 }
 
