@@ -19,10 +19,10 @@ export const getEntryById = async (id: number) => {
     return res.data;
 }
 
-export const postEntry = async (id: number, data: any) => {
-    const res = await api.post(`entries/${id}/add/`, data);
-    return res.data;
-}
+export const postEntry = async (data: any) => {
+  const res = await api.post(`entries/add/`, data);
+  return res.data;
+};
 
 export const updateEntry = async (id: number, data: any) => {
     const res = await api.patch(`entries/${id}/update/`, data);

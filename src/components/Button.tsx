@@ -4,7 +4,7 @@ import clsx from 'clsx';
 interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
     children: ReactNode;
     variant?: 'primary' | 'redghost' | 'ghost' | 'secondary' | 'greyghost';
-    size?: 'sm' | 'md' | 'lg';
+    size?: 'sm' | 'md' | 'lg' | 'small';
     className?: string;
 }
 
@@ -18,23 +18,28 @@ const variantStyles = {
     greyghost: 'btn bg-gray-300 border-1 border-gray-400 text-gray-800 hover:bg-gray-500 hover:text-[var(--brokenWhite)]'
 };
 
-// const sizeStyles = {
-//     sm: 'text-sm py-1 px-2',
-//     md: 'text-base py-2 px-4',
-//     lg: 'text-lg py-3 px-6',
-// };
-
+const sizeStyles = {
+    sm: "btn-sm",
+    md: "btn-md",
+    lg: "btn-lg",
+    small: "btn-xs"
+};
 
 function Button({
     children,
     variant = 'primary',
-    // size = 'sm',
+    size = 'sm',
     className,
     ...props
 }: ButtonProps) {
   return (
     <button
-        className={clsx(baseStyles, variantStyles[variant], className)}
+        className={clsx(
+            baseStyles, 
+            variantStyles[variant], 
+            sizeStyles[size],
+            className
+        )}
         {...props}
     >
         {children}

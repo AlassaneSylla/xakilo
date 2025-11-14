@@ -32,6 +32,43 @@ h3 {
     color: var(--primary);
 }
 
+/* pour ne pas imprimer les bouton de la facture */
+@media print {
+  .no-print {
+    display: none !important;
+  }
+}
+
+
+/* imprimer le contenu */
+@media print {
+  body * {
+    visibility: hidden !important;
+  }
+  #invoice-print-area,
+  #invoice-print-area * {
+    visibility: visible !important;
+  }
+  #invoice-print-area {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+  }
+
+  /* format a5 paysage */
+  @page {
+    size: A5 landscape; 
+    margin: 8mm;
+  }
+  #invoice-print-area {
+    width: 190mm;    
+    padding: 5mm;
+    margin: 0 auto;
+  }
+}
+
+
 
 
 

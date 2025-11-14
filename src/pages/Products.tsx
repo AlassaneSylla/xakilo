@@ -28,7 +28,6 @@ type NewProductForm = {
 
 
 export default function Products() {
-  const [selectedProduct, setSelectedProduct] = useState<any | null>(null);
   const editModalRef = useRef<{ open: () => void; close: () => void }>(null);
   const addModalRef = useRef<{ open: () => void; close: () => void }>(null);
   const [products, setProducts] = useState<any[]>([]);
@@ -264,7 +263,7 @@ export default function Products() {
               <th>🔢 Référence</th>
               <th>📦 Stock</th>
               <th>💰 Prix Unitaire</th>
-              <th>Actions</th>
+              <th>⚙️ Actions</th>
             </tr>
           </thead>
           <tbody className='transition-all duration-300 ease-in-out'>
@@ -272,8 +271,8 @@ export default function Products() {
               <tr key={index} className="hover:bg-base-200">
                 <td className='capitalize'>{row.product_name}</td>
                 <td className='capitalize'>{row.category}</td>
-                <td>{row.product_ref}</td>
-                <td>{row.stock}</td>
+                <td className='text-xs'>{row.product_ref}</td>
+                <td className='font-bold'>{row.stock}</td>
                 <td>{row.unit_price}</td>
                 <td className='flex flex-direction-row gap-6'>
                   <button 
@@ -294,13 +293,7 @@ export default function Products() {
                   >
                     <SquarePen />
                   </button>
-                  <button 
-                    className="btn btn-xs bg-transparent border border-0 hover:text-[color:red]"
-                    onClick={() => handleDelete(row.id)}
-                  >
-                    <Trash />
-                  </button>
-                  
+
                   {/* MOdal pour modifier */}
                   <Modal ref={editModalRef} title="Modifier le produit">
                     <Form 
@@ -312,6 +305,14 @@ export default function Products() {
                       loading={loading}
                     />
                   </Modal>
+
+                  <button 
+                    className="btn btn-xs bg-transparent border border-0 hover:text-[color:red]"
+                    onClick={() => handleDelete(row.id)}
+                  >
+                    <Trash />
+                  </button>
+                  
                   <Link 
                     to={`/products/${row.id}/fiche-stock`} 
                     state={{ product: row }} 

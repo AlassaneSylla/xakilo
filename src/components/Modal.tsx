@@ -29,3 +29,4 @@ const Modal = forwardRef(({ title, children }: ModalProps, ref) => {
 });
 
 export default Modal;
+
