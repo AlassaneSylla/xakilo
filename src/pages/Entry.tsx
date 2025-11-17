@@ -281,7 +281,6 @@ export default function Entry() {
             />
           </Modal>
 
-
           <Button variant="greyghost" size="md">
               <ListFilter /> Filtrer Entrée
           </Button>

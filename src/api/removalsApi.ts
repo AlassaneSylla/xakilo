@@ -10,11 +10,16 @@ export const getRemovalsByProductId = async (productId: number) => {
 };
 
 export const getRemovals = async () => {
-    const res = await api.get(`removals/`)
-    return res.data
+  const res = await api.get(`removals/`)
+  return res.data
 }
 
 export const getRemovalById = async (id: number) => {
-    const res = await api.get(`removals/${id}/`);
-    return res.data;
+  const res = await api.get(`removals/${id}/`);
+  return res.data;
 }
+
+export const postRemoval = async (data: any) => {
+  const res = await api.post(`removals/add/`, data);
+  return res.data
+} 

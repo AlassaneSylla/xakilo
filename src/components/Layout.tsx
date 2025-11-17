@@ -13,6 +13,7 @@ import StockSheet from '../pages/Sheet'
 import Parameters from '../pages/Parameters'
 import Users from '../pages/Users'
 import AlertList from '../pages/AlertsListe';
+import RemovalForm from '../pages/RemovalForm';
 
 interface LayoutProps {
   children: ReactNode
@@ -39,6 +40,7 @@ function Layout({ children }: LayoutProps) {
               <Route path="/parameters" element={<Parameters />} />
               <Route path="/products/:id/fiche-stock" element={<StockSheet />} />
               <Route path="/low-stock" element={<AlertList />} />
+              <Route path='/removal-form' element={<RemovalForm />} />
             </Routes>
             {children}
           </main>

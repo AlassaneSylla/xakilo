@@ -1,23 +1,45 @@
-import { useState, useEffect } from 'react';
-import { getRemovals } from '../api/removalsApi';
+import { useState, useEffect, useRef } from 'react';
+import { getRemovals, postRemoval } from '../api/removalsApi';
+import { getProducts } from '../api/productApi';
 
 import { Search, ListFilter, Minus } from 'lucide-react';
 import Button from "../components/Button";
 import { SquarePen, Trash, ReceiptText } from 'lucide-react';
 import InvoiceTemplate from '../components/Template'
+import { Link } from 'react-router-dom';
+
 
 
 export default function Removal() {
+  const [removalProducts, setRemovalProducts] = useState<any[]>([]);
   const [removals, setRemovals] = useState<any[]>([]);
+  const [selectedInvoice, setSelectedInvoice] = useState<any>(null); //for modal
+  const [loading, setLoading] = useState(false);
+  const addRemovalModalRef = useRef<{ open: () => void; close: () => void }>(null);
 
-  //for modal
-  const [selectedInvoice, setSelectedInvoice] = useState<any>(null);
-
-  const handleShowInvoice = (removal: any) => {
-    setSelectedInvoice(removal);
-    const modal = document.getElementById("invoice_modal") as HTMLDialogElement;
-    modal?.showModal();
-  };
+  // const addRemovalFields = [
+  //   { name: "client_name", label: "Client", required: true },
+  //   {
+  //     name: "product",
+  //     label: "Produit",
+  //     required: true,
+  //     options: removalProducts.map((p) => ({
+  //       value: p.id,
+  //       label: p.product_name,
+  //     })),
+  //   },
+  //   { 
+  //   name: "destination", 
+  //   label: "Destination", 
+  //   required: true,
+  //   options: DESTINATION_OPTIONS
+  //   },
+  //   { 
+  //     name: "invoice_status", 
+  //     label: "Etat", 
+  //     options: STATUS_OPTIONS
+  //   },
+  // ];
 
   useEffect(() => {
     getRemovals()
@@ -25,6 +47,19 @@ export default function Removal() {
       .catch((error) => console.log('Error GGET Removals', error));
   }, []);
 
+  useEffect(() => {
+    getProducts()
+      .then((data) => setRemovalProducts(data))
+      .catch((error) => console.log("Erreur Get Products : ", error));
+  })
+
+  const handleShowInvoice = (removal: any) => {
+    setSelectedInvoice(removal);
+    const modal = document.getElementById("invoice_modal") as HTMLDialogElement;
+    modal?.showModal();
+  };
+
+  
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 5;
 
@@ -37,13 +72,21 @@ export default function Removal() {
     <div>
       <h1 className="text-2xl font-bold uppercase">table des Sorties</h1>
       <div className="grid grid-cols-3 gap-10 mb-8">
+        
         <label className="input">
           <Search />
           <input type="search" required placeholder="Rechercher" />
         </label>
-        <Button variant="primary" size="md">
-          <Minus /> Enregistrer une sortie
-        </Button>
+
+        <Link to="/removal-form">
+          <Button 
+            variant="primary" 
+            size="md"
+          >
+            <Minus /> Enregistrer une sortie
+          </Button>
+        </Link>
+
         <Button variant="greyghost" size="md">
           <ListFilter /> Filtrer Sorties
         </Button>

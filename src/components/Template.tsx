@@ -10,7 +10,7 @@ export default function InvoiceTemplate({ selectedInvoice }: InvoiceTemplateProp
     <dialog id="invoice_modal" className="modal">
       <div id="invoice-print-area">
         <ModalInvoice
-          title={`Facture N° : ${selectedInvoice?.invoice?.invoice_number || ""}`}
+          title={`${selectedInvoice?.invoice?.invoice_number || ""}`}
         >
           {selectedInvoice && (
             <div className="space-y-3">

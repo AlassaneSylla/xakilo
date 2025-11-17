@@ -13,7 +13,7 @@ const ModalInvoice = ({ title, children }: ModalProps) => {
 
     return (
         <div className="modal-box w-11/12 max-w-4xl">
-            <h3 className="font-semibold">{title}</h3>
+            <h3 className="">{title}</h3>
             {children}
             <div className="modal-action">
                 <form method="dialog" className="flex gap-3 no-print">
