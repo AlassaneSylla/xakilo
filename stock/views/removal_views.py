@@ -9,13 +9,13 @@ from django.utils import timezone
 from stock.models.removal import Removal, RemovalItem
 from products.models import Product
 from stock.serializers.removal_serializer import RemovalSerializer
-
+from stock.services.removal_service import create_removal_with_items, delete_removal_and_restore_stock, update_removal_status
 
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def get_removals(request):
-    removals = Removal.objects.prefetch_related('items', 'items__product').all().order_by('date_register')
+    removals = Removal.objects.prefetch_related('items', 'items__product').order_by('-date_register')
     serializer = RemovalSerializer(removals, many=True)
     return Response(serializer.data, status=status.HTTP_200_OK)
 
@@ -23,9 +23,6 @@ def get_removals(request):
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def get_removal(request, id):
-    """
-    Get one removal
-    """
     removal = get_object_or_404(Removal.objects.prefetch_related('items__product'), pk=id)
     serializer = RemovalSerializer(removal)
     return Response(serializer.data, status=status.HTTP_200_OK)
@@ -33,74 +30,20 @@ def get_removal(request, id):
 
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
+# @transaction.atomic
 def post_removal(request):
     """
-    Créer un nouveau removal (sortie de stock)
-    Si c'est une vente la facture est générée automatiquement
+    Crée une sortie de stock (vente / don / perte)
     """
     data = request.data
     user = request.user
+    items = data.get('items', [])
+    removal_data = {k: v for k, v in data.items() if k != "items"}
 
-    # destination validation
-    destination = data.get('destination')
-    if destination not in ['vente', 'don', 'perte']:
-        return Response({"error": "destination invalide"}, status=status.HTTP_400_BAD_REQUEST)
-
-    # validate items
-    items_data = data.get('items', [])
-    if not items_data:
-        return Response({"error": "aucun produit fourni"}, status=status.HTTP_400_BAD_REQUEST)
-
-    invoice_status = data.get('invoice_status', 'payee')
-
-    # for removal
-    removal = Removal.objects.create(
-        client_name=data.get('client_name'),
-        destination=destination,
-        created_by=user,
-        invoice_status=invoice_status 
-    )
-
-    total_amount = 0
-
-    # add product
-    for item in items_data:
-        product_id = item.get('product')
-        quantity = item.get('quantity', 0)
-
-        try:
-            product = Product.objects.get(id=product_id)
-        except Product.DoesNotExist:
-            return Response(
-                {"error": f"produit avec id {product_id} introuvable"},
-                status=status.HTTP_404_NOT_FOUND
-            )
-
-        if product.stock < quantity:
-            return Response(
-                {"error": f"stock insuffisant pour {product.product_name}."},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-
-        # create item
-        RemovalItem.objects.create(
-            removal=removal,
-            product=product,
-            quantity=quantity,
-            unit_price=product.unit_price
-        )
-
-        # décrémentation du stock
-        product.stock -= quantity
-        product.save()
-
-        total_amount += quantity * product.unit_price
-
-    # invoice udated
-    if destination == 'vente':
-        removal.invoice_total_amount = total_amount
-        removal.invoice_date_created = timezone.now()
-        removal.save()
+    try:
+        removal = create_removal_with_items(user, removal_data, items)
+    except ValueError as e:
+        return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
     serializer = RemovalSerializer(removal)
     return Response(serializer.data, status=status.HTTP_201_CREATED)
@@ -108,66 +51,54 @@ def post_removal(request):
 
 @api_view(['PATCH'])
 @permission_classes([IsAdminUser])
+# @transaction.atomic
 def patch_removal(request, id):
     """
-    Met à jour un Removal (sortie de stock / facture)
+    Met à jour le statut ou les champs autorisés d’un Removal
     """
     removal = get_object_or_404(Removal, pk=id)
     data = request.data
 
-    # Vérifier si la facture est déjà payée ou annulée
-    if removal.invoice_status in ['payee', 'annulee']:
-        return Response(
-            {"error": "Impossible de modifier une facture déjà payée ou annulée."},
-            status=status.HTTP_400_BAD_REQUEST
-        )
-
-    # Champs autorisés pour la modification
-    allowed_fields = ['client_name', 'invoice_status']
-    update_data = {field: data[field] for field in data if field in allowed_fields}
-
-    # Gestion du changement de statut
-    new_status = update_data.get('invoice_status')
-    if new_status:
-        if new_status == 'payee':
-            removal.invoice_status = 'payee'
-            removal.invoice_date_created = removal.invoice_date_created or timezone.now()
-        elif new_status == 'annulee':
-            removal.invoice_status = 'annulee'
-            for item in removal.items.all():
-                product = item.product
-                product.stock += item.quantity
-                product.save()
+    try:
+        # Si un nouveau statut est envoyé
+        if 'invoice_status' in data:
+            removal = update_removal_status(removal, data['invoice_status'])
     
-        update_data.pop('invoice_status')
+    # Mise à jour des autres champs autorisés
+        allowed_fields = ['client_name']
+        update_data = {k: v for k, v in data.items() if k in allowed_fields}
+        serializer = RemovalSerializer(removal, data=update_data, partial=True)
 
-    # maj des champs envoyes
-    serializer = RemovalSerializer(removal, data=update_data, partial=True)
-    if serializer.is_valid():
-        serializer.save()
-        return Response(serializer.data, status=status.HTTP_202_ACCEPTED)
-    
-    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_202_ACCEPTED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    except ValueError as e:
+        return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
 
+@api_view(['DELETE'])
+@permission_classes([IsAdminUser])
+def delete_removal(request, id):
+    """
+    Supprime un Removal et restaure le stock.
+    (Admins uniquement)
+    """
+    removal = get_object_or_404(Removal, pk=id)
+    delete_removal_and_restore_stock(removal)
+    return Response({"message": "Sortie supprimée et stock restauré."}, status=status.HTTP_204_NO_CONTENT)
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
 def get_removals_by_product(request, product_id):
-    # Récupère tous les removals associés à ce produit via removal_items
+    """
+    Récupère toutes les sorties liées à un produit donné.
+    """
     removal_items = RemovalItem.objects.filter(product_id=product_id)
     removal_ids = removal_items.values_list('removal_id', flat=True).distinct()
-    
+
     removals = Removal.objects.filter(id__in=removal_ids).order_by('-date_register')
     serializer = RemovalSerializer(removals, many=True)
-    
     return JsonResponse(serializer.data, safe=False)
-
-
-# @api_view(['DELETE'])
-# @permission_classes([IsAdminUser])
-# def delete_removal(request, id):
-#     """
-#     Delete an removal by an admin only
-#     """
-#     removal = get_object_or_404(Removal, pk=id)
-#     removal.delete()
-#     return Response({"message": 'removal was deleted'}, status=status.HTTP_204_NO_CONTENT)
-    
