@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { getRemovals, postRemoval } from '../api/removalsApi';
+import { getRemovals } from '../api/removalsApi';
 import { getProducts } from '../api/productApi';
 
 import { Search, ListFilter, Minus } from 'lucide-react';
@@ -72,7 +72,7 @@ export default function Removal() {
     <div>
       <h1 className="text-2xl font-bold uppercase">table des Sorties</h1>
       <div className="grid grid-cols-3 gap-10 mb-8">
-        
+
         <label className="input">
           <Search />
           <input type="search" required placeholder="Rechercher" />
@@ -105,36 +105,42 @@ export default function Removal() {
             </tr>
           </thead>
           <tbody className='transition-all duration-300 ease-in-out'>
-            {currentItems.map((row, index) => (
-              <tr key={index} className="hover:bg-base-200">
-                <th>{row.invoice.invoice_number}</th>
-                <td>{row.client_name}</td>
-                <td className='text-xs'>{row.destination}</td>
-                <td>{row.invoice?.total_amount?.toLocaleString()}</td>
-                <td>{new Date(row.invoice?.date_created).toLocaleDateString()}</td>
-                <td className='capitalize'>{row.created_by_username}</td> 
-                <td className='flex flex-direction-row gap-2'>
-                  <button className="btn btn-xs bg-transparent border border-0 hover:text-[color:var(--primary)] tooltip" data-tip='modifier'
+            {currentItems.map((row, index) => {
+              const isSale = row.destination === "vente";
+              return (
+                <tr key={index} className="hover:bg-base-200">
+                  <th>{isSale ? row.invoice.invoice_number : "—"}</th>
+                  <td>{row.client_name}</td>
+                  <td 
+                    className={`text-xs font-semibold ${row.destination === 'don' ? 'text-green-600' : row.destination === 'perte' ? 'text-red-600' : ''}`}
                   >
-                    <SquarePen/>
-                  </button>
-                  <button 
-                    className="btn btn-xs bg-transparent border border-0 hover:text-[color:red] tooltip" 
-                    data-tip='supprimer'
-                  >
-                    <Trash />
-                  </button>
-                  <button 
-                    className='btn btn-xs bg-transparent border border-0 hover:text-amber-700 tooltip' 
-                    data-tip='afficher facture'
-                    onClick={() => handleShowInvoice(row)}
-                  >
-                    <ReceiptText />
-                  </button>
-                </td>
-              </tr>
-            ))}
+                    {row.destination}
+                  </td>
+                  <td>{isSale ? row.invoice.total_amount?.toLocaleString() : "—"}</td>
+                  <td>{isSale && row.invoice.date_created ? new Date(row.invoice.date_created).toLocaleDateString() : "—"}</td>
+                  <td className='capitalize'>{row.created_by_username}</td>
+                  <td className='flex flex-direction-row gap-2'>
+                    <button className="btn btn-xs bg-transparent border border-0 hover:text-[color:var(--primary)] tooltip" data-tip='modifier'>
+                      <SquarePen/>
+                    </button>
+                    <button className="btn btn-xs bg-transparent border border-0 hover:text-[color:red] tooltip" data-tip='supprimer'>
+                      <Trash />
+                    </button>
+                    {isSale && (
+                      <button 
+                        className='btn btn-xs bg-transparent border border-0 hover:text-amber-700 tooltip' 
+                        data-tip='afficher facture'
+                        onClick={() => handleShowInvoice(row)}
+                      >
+                        <ReceiptText />
+                      </button>
+                    )}
+                  </td>
+                </tr>
+              );
+            })}
           </tbody>
+
         </table>
 
         {/* Template facture  */}

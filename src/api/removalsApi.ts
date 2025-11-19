@@ -23,3 +23,8 @@ export const postRemoval = async (data: any) => {
   const res = await api.post(`removals/add/`, data);
   return res.data
 } 
+
+export const updateRemoval = async (id: number, data: any) => {
+    const res = await api.patch(`removals/${id}/update/`, data);
+    return res.data;
+}

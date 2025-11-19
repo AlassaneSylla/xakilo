@@ -14,84 +14,95 @@ type Entry = {
 };
 
 type RemovalProduct = {
-  product_name: string; 
+  product_name?: string;
   quantity: number;
   unit_price?: number;
   total_price?: number;
 };
 
+type Invoice = {
+  invoice_number: string;
+  total_amount: number;
+  status: string;
+  date_created: string;
+  products: RemovalProduct[];
+};
+
 type Removal = {
+  id: number;
+  client_name: string;
   destination: string;
-  invoice?: {
-    date_created?: string; 
-  };
-  products?: RemovalProduct[];
+  created_by_username: string;
+  invoice: Invoice | null;  
 };
 
 type StockPoint = {
-  updateDate: string; // date au format lisible
-  quantity: number;   // stock cumulé
+  updateDate: string; 
+  quantity: number;   
 };
 
 export default function StockSheet() {
     const location = useLocation();
-  const { product } = location.state || {}; // produit passé depuis Products
+    const { product } = location.state || {}; // produit passé depuis Products
 
-  const [entries, setEntries] = useState<Entry[]>([]);
-  const [removals, setRemovals] = useState<Removal[]>([]);
-  const [movements, setMovements] = useState<
-    { date: string; quantity: number; type: "entry" | "removal"; supplier?: string }[]
-  >([]);
-  const [stockVariation, setStockVariation] = useState<StockPoint[]>([]);
+    const [entries, setEntries] = useState<Entry[]>([]);
+    const [removals, setRemovals] = useState<Removal[]>([]);
+    const [movements, setMovements] = useState<
+      { date: string; quantity: number; type: "entry" | "removal"; supplier?: string }[]
+    >([]);
+    const [stockVariation, setStockVariation] = useState<StockPoint[]>([]);
+    const [currentPage, setCurrentPage] = useState(1);
 
-  // Charger les données liées au produit
-  useEffect(() => {
-    if (!product?.id) return;
+    // Charger les données liées au produit
+    useEffect(() => {
+        if (!product?.id) return;
 
-    getEntriesByProductId(product.id)
-      .then(setEntries)
-      .catch((err) => console.error("Erreur chargement entrées :", err));
+        getEntriesByProductId(product.id)
+            .then(setEntries)
+            .catch((err) => console.error("Erreur chargement entries :", err));
 
-    getRemovalsByProductId(product.id)
-      .then(setRemovals)
-      .catch((err) => console.error("Erreur chargement sorties :", err));
-  }, [product]);
+        getRemovalsByProductId(product.id)
+            .then(setRemovals)
+            .catch((err) => console.error("Erreur chargement removals :", err));
+    }, [product]);
 
-  // Construire les données du graphe et de l'historique
-  useEffect(() => {
-    if (!entries.length && !removals.length) return;
+    // Construire les données du graphe et de l'historique
+    useEffect(() => {
+        if (!entries.length && !removals.length) return;
 
-    // 📥 Entrées
-    const entryPoints = entries.map((e) => ({
-      date: typeof e.date_register === "string" ? e.date_register : e.date_register.toString(),
-      quantity: e.quantity,
-      type: "entry" as const,
-      supplier: e.supplier,
-    }));
+        // console.log("Removal : ", removals);
 
-    // 📤 Sorties
-    const removalPoints = removals.flatMap((r) =>
-      (r.products || []).map((p) => ({
-        date: r.invoice?.date_created ?? "",
-        quantity: p.quantity,
-        type: "removal" as const,
-        supplier: r.destination ?? "client inconnu",
-      }))
-    );
+        // entrees
+        const entryPoints = entries.map((e) => ({
+            date: typeof e.date_register === "string" ? e.date_register : e.date_register.toString(),
+            quantity: e.quantity,
+            type: "entry" as const,
+            supplier: e.supplier,
+        }));
 
-    // 🧩 Fusion et tri chronologique
-    const allPoints = [...entryPoints, ...removalPoints].filter((p) => p.date);
-    allPoints.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+        // sorties
+        const removalPoints = removals.flatMap((r) =>
+            (r.invoice?.products || []).map((p) => ({
+                date: r.invoice?.date_created ?? "",
+                quantity: p.quantity,
+                type: "removal" as const,
+                supplier: r.client_name,
+            }))
+        );
 
-    // 📊 Calcul du stock cumulé dans le temps
-    let currentStock = 0;
-    const variation: StockPoint[] = [];
-    allPoints.forEach((move) => {
-      currentStock += move.type === "entry" ? move.quantity : -move.quantity;
-      variation.push({
-        updateDate: new Date(move.date).toISOString().split("T")[0],
-        quantity: currentStock,
-      });
+        //tri chronologique
+        const allPoints = [...entryPoints, ...removalPoints].filter((p) => p.date);
+        allPoints.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+
+        // stock cumulé dans le temps
+        let currentStock = 0;
+        const variation: StockPoint[] = [];
+        allPoints.forEach((move) => {
+        currentStock += move.type === "entry" ? move.quantity : -move.quantity;
+        variation.push({
+            updateDate: new Date(move.date).toISOString().split("T")[0],
+            quantity: currentStock,
+        });
     });
 
     // mise à jour des états
@@ -99,16 +110,21 @@ export default function StockSheet() {
     setStockVariation(variation);
     }, [entries, removals]);
 
-    // 🔹 Derniers points (si tu veux limiter le graphe)
+    // derniers points 
     const lastFive = stockVariation.slice(-5);
 
     // //pagination 
-    const [ currentPage, setCurrentPage ] = useState(1);
-    const itemsPerPage = 6;
+    const itemsPerPage = 5;
+    const numberOfPages = Math.ceil(movements.length / itemsPerPage);
+
     const indexOfLast = currentPage * itemsPerPage;
     const indexOfFirst = indexOfLast - itemsPerPage;
+
     const currentHistoryItems = movements.slice(indexOfFirst, indexOfLast);
-    const numberOfPages = Math.ceil(history.length / itemsPerPage);
+
+    useEffect(() => {
+    if (currentPage > numberOfPages) setCurrentPage(numberOfPages || 1);
+    }, [numberOfPages]);
 
   return (
     <div>
@@ -211,7 +227,7 @@ export default function StockSheet() {
                         <th>🔁 Type mouvement</th>
                         <th>📅 Date</th>
                         <th>📥/📤 Quantité</th>
-                        <th>👤 Fournisseur</th>
+                        <th>👤 Fournisseur / Client</th>
                     </tr>
                 </thead>
                 <tbody className='transition-all duration-300 ease-in-out'>
@@ -246,22 +262,24 @@ export default function StockSheet() {
         </div>
 
         <div className="flex justify-center mt-4 space-x-2">
-            <button 
-                className="btn btn-sm bg-[var(--black)] text-[var(--brokenWhite)]" 
-                onClick={() => setCurrentPage((p) => Math.max(p - 1, 1))}
-                disabled={currentPage === 1}
-            >
-                Précédent
+            <button
+  className="btn btn-sm bg-[var(--black)] text-[var(--brokenWhite)]"
+  onClick={() => setCurrentPage((p) => Math.max(p - 1, 1))}
+  disabled={currentPage === 1}
+>
+  Précédent
             </button>
+
             <span className="px-3 py-1 text-xs">
-                Page {currentPage} sur ( {numberOfPages} )  
+            Page {currentPage} sur {numberOfPages}
             </span>
-            <button 
-                className="btn btn-sm bg-[var(--black)] text-[var(--brokenWhite)]" 
-                onClick={() => setCurrentPage((p) => p + 1)}
-                disabled={indexOfLast >= history.length}
+
+            <button
+            className="btn btn-sm bg-[var(--black)] text-[var(--brokenWhite)]"
+            onClick={() => setCurrentPage((p) => Math.min(p + 1, numberOfPages))}
+            disabled={currentPage === numberOfPages || numberOfPages === 0}
             >
-                Suivant
+            Suivant
             </button>
         </div>
     </div>

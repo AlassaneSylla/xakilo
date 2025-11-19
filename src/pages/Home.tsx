@@ -11,89 +11,64 @@ import { getRemovals } from '../api/removalsApi';
 
 
 function Home() {
-    const [removalOfTheDay, setRemovalOfTheDay] = useState<number>(0);
-    const [entriesOfTheMonth, setEntriesOfTheMonth] = useState<number>(0);
-    const [product, setProduct] = useState();
-    const [count, setCount] = useState<number>(0);
-    const [lowStock, setLowStock] = useState<number>(0);
+    const [totalProducts, setTotalProducts] = useState(0);
+    const [totalRemovals, setTotalRemovals] = useState(0);
+    const [removalsOfTheDay, setRemovalsOfTheDay] = useState(0);
+    const [totalEntries, setTotalEntries] = useState(0);
+    const [entriesOfTheMonth, setEntriesOfTheMonth] = useState(0);
+    const [lowStockCount, setLowStockCount] = useState(0);
+
 
     useEffect(() => {
-        const fetchRemovals = async () => {
-            try {
-                const removals = await getRemovals();
-                setCount(removals.length);
+        const fetchAllData = async () => {
+        try {
+            const [products, removals, entries, lowStock] = await Promise.all([
+            getProducts(),
+            getRemovals(),
+            getEntries(),
+            getLowStockProducts(),
+            ]);
 
-                const today = new Date();
-                const currentDay = today.getDay();
-                const currentMonth = today.getMonth();
-                const currentYear = today.getFullYear();
+            // total produits
+            setTotalProducts(products.length);
 
-                const dailyRemoval = removals.filter((removal: any) => {
-                    const removalDate = new Date(removal.invoice.date_created);
-                    return (
-                        removalDate.getDay() == currentDay &&
-                        removalDate.getMonth() == currentMonth &&
-                        removalDate.getFullYear() == currentYear
-                    )
-                });
+            // total sorties
+            setTotalRemovals(removals.length);
 
-                setRemovalOfTheDay(dailyRemoval.length);
+            // sorties du jour
+            const today = new Date();
+            const dailyRemovals = removals.filter((removal: any) => {
+            if (!removal.invoice?.date_created) return false; // ignore les dons/pertes
+            const removalDate = new Date(removal.invoice.date_created);
+            return (
+                removalDate.getDate() === today.getDate() &&
+                removalDate.getMonth() === today.getMonth() &&
+                removalDate.getFullYear() === today.getFullYear()
+            );
+            });
+            setRemovalsOfTheDay(dailyRemovals.length);
 
-            } catch (error) {
-                
-            }
+            // total entrees
+            setTotalEntries(entries.length);
+
+            // entrees du mois
+            const monthlyEntries = entries.filter((entry: any) => {
+            const entryDate = new Date(entry.date_register);
+            return (
+                entryDate.getMonth() === today.getMonth() &&
+                entryDate.getFullYear() === today.getFullYear()
+            );
+            });
+            setEntriesOfTheMonth(monthlyEntries.length);
+
+            // stock faible
+            setLowStockCount(lowStock.count);
+        } catch (error) {
+            console.error("Erreur lors du chargement des données :", error);
+        }
         };
 
-        fetchRemovals();
-    }, []);
-
-    useEffect(() => {
-        const fetchEntries = async () => {
-            try {
-                const entries = await getEntries();
-                //entrees totale
-                setCount(entries.length);
-
-                const now = new Date();
-                const currentMonth = now.getMonth(); // 0 = janvier
-                const currentYear = now.getFullYear();
-
-                const monthlyEntries = entries.filter((entry: any) => {
-                    const entryDate = new Date(entry.date_register);
-                    return (
-                    entryDate.getMonth() === currentMonth &&
-                    entryDate.getFullYear() === currentYear
-                    );
-                });
-
-                setEntriesOfTheMonth(monthlyEntries.length);
-
-            } catch (error) {
-                console.error("Erreur chargement des entrees : ", error)
-            }
-        };
-
-        fetchEntries();
-
-    }, []);
-
-    useEffect(() => {
-        const fetchProducts = async () => {
-            try {
-                const data = await getProducts();
-                setProduct(data);
-                setCount(data.length);
-            } catch (error) {
-                console.error("Erreur lors du chargement des produits : ", error)
-            }
-        };
-        fetchProducts();
-    }, []);
-
-    useEffect(() => {
-        getLowStockProducts()
-            .then((data) => setLowStock(data.count))
-            .catch((err) => console.error(err));
+        fetchAllData();
     }, []);
 
     return (
@@ -102,10 +77,10 @@ function Home() {
 
             {/* stock statistics */}
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 mb-12">
-                <Card title='Nombre total de produits' totalProduct={count} color='badge-accent'/>
+                <Card title='Nombre total de produits' totalProduct={totalProducts} color='badge-accent'/>
                 <Card title="Entrées du mois ↗︎" totalProduct={entriesOfTheMonth} color='badge-success'/>
-                <Card title='Sorties du jour ↘︎' totalProduct={removalOfTheDay} color='badge-warning'/>
-                <Card title='Produit(s) en rupture' totalProduct={lowStock} color='badge-error'/>
+                <Card title='Sorties du jour ↘︎' totalProduct={removalsOfTheDay} color='badge-warning'/>
+                <Card title='Produit(s) en rupture' totalProduct={lowStockCount} color='badge-error'/>
             </div>
 
             {/* stock charts */}

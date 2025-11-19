@@ -98,7 +98,6 @@ export default function RemovalForm() {
         }
     };
 
-
     return(
         <div>
             <h1 className="text-2xl font-bold uppercase">Créer une sortie</h1>
@@ -110,19 +109,18 @@ export default function RemovalForm() {
                     }}
                     className="flex flex-col gap-4"
                 >
-
                     {/* Client */}
                     <div>
-                    <input 
-                        type="text" 
-                        placeholder="Prenom et nom du client ou raison sociale" 
-                        className="input input-neutral w-full"
-                        value={newRemovalForm.client_name}
-                        onChange={(e) =>
-                        setNewRemovalForm((prev) => ({ ...prev, client_name: e.target.value }))
-                        } 
-                        required
-                    />
+                        <input 
+                            type="text" 
+                            placeholder="Prenom et nom du client ou raison sociale" 
+                            className="input input-neutral w-full"
+                            value={newRemovalForm.client_name}
+                            onChange={(e) =>
+                            setNewRemovalForm((prev) => ({ ...prev, client_name: e.target.value }))
+                            } 
+                            required
+                        />
                     </div>
 
                     {/* Produits */}
@@ -174,35 +172,37 @@ export default function RemovalForm() {
 
                     {/* Destination */}
                     <div>
-                    <label className="font-semibold">Destination</label>
-                    <select
-                        className="select select-bordered w-full"
-                        value={newRemovalForm.destination}
-                        onChange={(e) =>
-                        setNewRemovalForm((prev) => ({ ...prev, destination: e.target.value }))
-                        }
-                    >
-                        <option value="vente">Vente</option>
-                        <option value="don">Don</option>
-                        <option value="perte">Perte</option>
-                    </select>
+                        <label className="font-semibold">Destination</label>
+                        <select
+                            className="select select-bordered w-full"
+                            value={newRemovalForm.destination}
+                            onChange={(e) =>
+                            setNewRemovalForm((prev) => ({ ...prev, destination: e.target.value }))
+                            }
+                        >
+                            <option value="vente">Vente</option>
+                            <option value="don">Don</option>
+                            <option value="perte">Perte</option>
+                        </select>
                     </div>
 
                     {/* Statut facture */}
-                    <div>
-                    <label className="font-semibold">Statut facture</label>
-                    <select
-                        className="select select-bordered w-full"
-                        value={newRemovalForm.invoice_status}
-                        onChange={(e) =>
-                        setNewRemovalForm((prev) => ({ ...prev, invoice_status: e.target.value }))
-                        }
-                    >
-                        <option value="payee">Payée</option>
-                        <option value="en_attente">En attante</option>
-                        <option value="annulee">Annulée</option>
-                    </select>
-                    </div>
+                    {newRemovalForm.destination === "vente" && (
+                        <div>
+                            <label className="font-semibold">Statut facture</label>
+                            <select
+                            className="select select-bordered w-full"
+                            value={newRemovalForm.invoice_status}
+                            onChange={(e) =>
+                                setNewRemovalForm((prev) => ({ ...prev, invoice_status: e.target.value }))
+                            }
+                            >
+                            <option value="payee">Payée</option>
+                            <option value="en_attente">En attente</option>
+                            <option value="annulee">Annulée</option>
+                            </select>
+                        </div>
+                    )}
 
                     <Button
                         variant="primary"
