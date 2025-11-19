@@ -19,7 +19,7 @@ def get_products(request):
     """
     Get all product
     """
-    products = Product.objects.all().order_by('-id') # "-" devant donne le plus recent 
+    products = Product.objects.all().order_by('-id') 
     serializer = ProductSerializer(products, many=True)
     return Response(serializer.data, status=status.HTTP_200_OK)
 
