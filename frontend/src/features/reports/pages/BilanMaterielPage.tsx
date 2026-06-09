@@ -11,7 +11,7 @@ import DonutCategoryChart from '../components/DonutCategoryChart';
 import StockEvolutionChart from '../components/StockEvolutionChart';
 import { getLossRegistry } from '../../stock/removals/api/removalsApi';
 import type { LossRecord } from '../../stock/removals/types';
-import type { ReportPeriod } from '../api/reportsApi';
+import type { ReportPeriod, TopProduct } from '../api/reportsApi';
 
 function fmt(n: number | undefined | null) {
   return (n ?? 0).toLocaleString('fr-FR');
@@ -78,7 +78,6 @@ function KpiCardFlux({
   );
 }
 
-type TopProduct = { id: number; name: string; category: string; qty: number; revenue: number };
 type RuptureProduct = { id: number; product_name: string; category: string };
 
 function TopProductsTable({ products }: { products: TopProduct[] }) {
@@ -111,7 +110,7 @@ function TopProductsTable({ products }: { products: TopProduct[] }) {
             <div className="flex items-center gap-2">
               <div className="flex-1 bg-base-300 rounded-full h-1.5">
                 <div
-                  className="h-1.5 rounded-full bg-[var(--primary)] transition-all duration-500"
+                  className="h-1.5 rounded-full bg-(--primary) transition-all duration-500"
                   style={{ width: `${Math.round((p.qty / maxQty) * 100)}%` }}
                 />
               </div>
@@ -158,7 +157,7 @@ function LossRegistryTable({ records }: { records: LossRecord[] }) {
                 <td className="text-sm font-medium">{r.employee}</td>
                 <td className="text-sm">{r.product}</td>
                 <td className="text-right font-bold text-red-500">{r.quantity}</td>
-                <td className="text-xs text-gray-500 max-w-[200px] truncate" title={r.justification}>
+                <td className="text-xs text-gray-500 max-w-50 truncate" title={r.justification}>
                   {r.justification || <span className="italic text-gray-300">—</span>}
                 </td>
                 <td className="text-center">
@@ -300,10 +299,10 @@ export default function BilanMaterielPage() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOwner, lossParams.date_from, lossParams.date_to]);
 
-  const mat     = data?.materiel;
+  const mat = data?.materiel;
   const topCats = data?.top_categories  ?? [];
   const topProds: TopProduct[] = data?.top_products ?? [];
-  const evo     = data?.evolution_mat   ?? [];
+  const evo = data?.evolution_mat ?? [];
   const ruptureProducts: RuptureProduct[] = mat?.rupture_products ?? [];
 
   const isAnnual = period === 'year';

@@ -268,16 +268,16 @@ export default function BilanFinancierPage() {
                 label="Dépenses déclarées"
                 value={`${fmt(fin.total_expenses)} F`}
                 sub="Petites dépenses de la période"
-                accent={fin.total_expenses > 0 ? 'border-orange-300' : 'border-base-300'}
-                positive={fin.total_expenses === 0}
+                accent={(fin.total_expenses ?? 0) > 0 ? 'border-orange-300' : 'border-base-300'}
+                positive={(fin.total_expenses ?? 0) === 0}
               />
               <KpiCard
-                icon={fin.benefice_net >= 0 ? <TrendingUp size={16} /> : <TrendingDown size={16} />}
+                icon={(fin.benefice_net ?? 0) >= 0 ? <TrendingUp size={16} /> : <TrendingDown size={16} />}
                 label="Bénéfice net"
                 value={`${fmt(fin.benefice_net)} F`}
                 sub="Marge brute − Pertes − Dépenses"
-                accent={fin.benefice_net >= 0 ? 'border-emerald-300' : 'border-red-300'}
-                positive={fin.benefice_net >= 0}
+                accent={(fin.benefice_net ?? 0) >= 0 ? 'border-emerald-300' : 'border-red-300'}
+                positive={(fin.benefice_net ?? 0) >= 0}
               />
             </div>
 

@@ -85,7 +85,7 @@ export default function EntryPage() {
     if (!ok) return;
     setSaving(true);
     try {
-      await create(addForm);
+      await create({ product: Number(addForm.product), quantity: Number(addForm.quantity), supplier: String(addForm.supplier) });
       toast.success('Entrée ajoutée !');
       refreshLowStock();
       setTimeout(() => addModalRef.current?.close(), 800);
@@ -98,7 +98,7 @@ export default function EntryPage() {
     if (editId === null) return;
     setSaving(true);
     try {
-      await update(editId, editForm);
+      await update(editId, { quantity: Number(editForm.quantity), supplier: String(editForm.supplier) });
       toast.success('Entrée mise à jour !');
       setTimeout(() => editModalRef.current?.close(), 800);
     } catch { toast.error('Échec mise à jour'); }

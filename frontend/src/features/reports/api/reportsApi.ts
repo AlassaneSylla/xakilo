@@ -4,9 +4,10 @@ export type ReportPeriod = 'day' | 'month' | 'year' | 'custom';
 
 export type ReportSection = 'materiel' | 'financier' | 'both';
 
-export type TopCategory    = { category: string; total: number };
-export type TopProduct     = { product_name: string; total: number };
+export type TopCategory    = { category: string; qty: number };
+export type TopProduct     = { id: number; name: string; category: string; qty: number; revenue: number };
 export type RuptureProduct = { id: number; product_name: string; category: string };
+export type EvolutionMatPoint = { mois: number; entrees: number; sorties: number };
 
 export type ReportFinancier = {
   ca_reel: number;
@@ -43,7 +44,7 @@ export type ReportData = {
   weekly?: WeeklyPoint[];
   evolution?: EvolutionPoint[];
   evolution_fin?: EvolutionPoint[];
-  evolution_mat?: EvolutionPoint[];
+  evolution_mat?: EvolutionMatPoint[];
   top_categories?: TopCategory[];
   top_products?: TopProduct[];
 };
