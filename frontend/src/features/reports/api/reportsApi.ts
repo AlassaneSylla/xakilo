@@ -4,6 +4,10 @@ export type ReportPeriod = 'day' | 'month' | 'year' | 'custom';
 
 export type ReportSection = 'materiel' | 'financier' | 'both';
 
+export type TopCategory    = { category: string; total: number };
+export type TopProduct     = { product_name: string; total: number };
+export type RuptureProduct = { id: number; product_name: string; category: string };
+
 export type ReportFinancier = {
   ca_reel: number;
   prev_ca?: number;
@@ -11,6 +15,11 @@ export type ReportFinancier = {
   cout_achat: number;
   marge_brute: number;
   charge_pertes: number;
+  ventes_totales?: number;
+  qty_pertes?: number;
+  total_expenses?: number;
+  benefice_net?: number;
+  paiements_par_mode?: { especes: number; mobile_money: number; carte: number };
 };
 
 export type ReportMateriel = {
@@ -18,6 +27,11 @@ export type ReportMateriel = {
   qty_vendues: number;
   qty_pertes: number;
   qty_dons: number;
+  stock_value?: number;
+  articles_disponibles?: number;
+  articles_rupture?: number;
+  valeur_pertes?: number;
+  rupture_products?: RuptureProduct[];
 };
 
 export type WeeklyPoint    = { week: number; ca_reel: number };
@@ -28,6 +42,10 @@ export type ReportData = {
   materiel?: ReportMateriel;
   weekly?: WeeklyPoint[];
   evolution?: EvolutionPoint[];
+  evolution_fin?: EvolutionPoint[];
+  evolution_mat?: EvolutionPoint[];
+  top_categories?: TopCategory[];
+  top_products?: TopProduct[];
 };
 
 export async function fetchReport(

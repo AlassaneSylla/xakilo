@@ -25,8 +25,8 @@ export default function EntryPage() {
   const [products, setProducts] = useState<Product[]>([]);
   const addModalRef  = useRef<ModalHandle>(null);
   const editModalRef = useRef<ModalHandle>(null);
-  const [addForm,     setAddForm]     = useState({ product: 0, quantity: 0, supplier: '', category: '' });
-  const [editForm,    setEditForm]    = useState({ product: 0, quantity: 0, supplier: '', category: '' });
+  const [addForm,     setAddForm]     = useState<Record<string, string | number>>({ product: 0, quantity: 0, supplier: '', category: '' });
+  const [editForm,    setEditForm]    = useState<Record<string, string | number>>({ product: 0, quantity: 0, supplier: '', category: '' });
   const [editId,      setEditId]      = useState<number | null>(null);
   const [saving,      setSaving]      = useState(false);
   const { refreshLowStock } = useStockAlert();

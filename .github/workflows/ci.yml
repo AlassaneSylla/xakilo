@@ -63,11 +63,11 @@ jobs:
         env:
           DJANGO_SETTINGS_MODULE: config.settings.test
           DJANGO_SECRET_KEY: ci-secret-key-not-for-production
-          POSTGRES_DB: xakilo_test
-          POSTGRES_USER: xakilo_user
-          POSTGRES_PASSWORD: xakilo_pass
-          POSTGRES_HOST: localhost
-          POSTGRES_PORT: "5432"
+          DB_NAME: xakilo_test
+          DB_USER: xakilo_user
+          DB_PASSWORD: xakilo_pass
+          DB_HOST: localhost
+          DB_PORT: "5432"
           REDIS_URL: redis://localhost:6379/0
         run: |
           pytest --cov=. --cov-report=xml -v || CODE=$?
