@@ -98,7 +98,7 @@ export default function QuickSaleModal({ onSuccess }: Props) {
     <dialog id="quick_sale_modal" className="modal">
       <div className="modal-box max-w-2xl">
         <div className="flex items-center gap-2 mb-5">
-          <Zap size={18} className="text-[var(--primary)]" />
+          <Zap size={18} className="text-(--primary)" />
           <h3 className="font-bold text-lg">Vente Rapide</h3>
         </div>
 
@@ -131,7 +131,7 @@ export default function QuickSaleModal({ onSuccess }: Props) {
             <div className="flex justify-between items-center mb-2">
               <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Produits</label>
               <button type="button" onClick={addLine}
-                className="btn btn-xs btn-ghost text-[var(--primary)] flex items-center gap-1">
+                className="btn btn-xs btn-ghost text-(--primary) flex items-center gap-1">
                 <Plus size={12} /> Ajouter ligne
               </button>
             </div>

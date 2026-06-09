@@ -40,7 +40,7 @@ export default function Header() {
       <header className="h-16 shadow-sm bg-base-100 flex items-center px-6 gap-4 relative">
 
         {/* Logo */}
-        <Link to={PATHS.HOME} className="flex items-center gap-2 shrink-0">
+        <Link to={user?.is_superuser ? PATHS.ADMIN_HOME : PATHS.HOME} className="flex items-center gap-2 shrink-0">
           <img src={logo} alt="Logo Xakilo" className="w-9 object-contain" />
           <span className="text-lg font-bold text-(--primary) hidden sm:block">Xakilo</span>
         </Link>
@@ -64,35 +64,37 @@ export default function Header() {
           </div>
         )}
 
-        {/* Notifications stock faible */}
-        <div className="dropdown dropdown-end">
-          <div tabIndex={0} role="button" className="btn btn-ghost btn-circle">
-            <div className="indicator">
-              <Bell size={20} />
-              {lowStockCount > 0 && (
-                <span className="badge badge-sm indicator-item bg-red-500 text-white border-0">
-                  {lowStockCount}
-                </span>
-              )}
+        {/* Notifications stock faible — boutique uniquement */}
+        {!user?.is_superuser && (
+          <div className="dropdown dropdown-end">
+            <div tabIndex={0} role="button" className="btn btn-ghost btn-circle">
+              <div className="indicator">
+                <Bell size={20} />
+                {lowStockCount > 0 && (
+                  <span className="badge badge-sm indicator-item bg-red-500 text-white border-0">
+                    {lowStockCount}
+                  </span>
+                )}
+              </div>
             </div>
-          </div>
-          <div
-            tabIndex={0}
-            className="card card-compact dropdown-content bg-base-200 z-10 mt-3 w-52 shadow"
-          >
-            <div className="card-body">
-              <span className="font-bold">{lowStockCount} alerte(s) stock</span>
-              <div className="card-actions">
-                <Link
-                  to={PATHS.LOW_STOCK}
-                  className="btn btn-xs btn-outline hover:text-(--brokenWhite) hover:bg-(--black)"
-                >
-                  Voir détails
-                </Link>
+            <div
+              tabIndex={0}
+              className="card card-compact dropdown-content bg-base-200 z-10 mt-3 w-52 shadow"
+            >
+              <div className="card-body">
+                <span className="font-bold">{lowStockCount} alerte(s) stock</span>
+                <div className="card-actions">
+                  <Link
+                    to={PATHS.LOW_STOCK}
+                    className="btn btn-xs btn-outline hover:text-(--brokenWhite) hover:bg-(--black)"
+                  >
+                    Voir détails
+                  </Link>
+                </div>
               </div>
             </div>
           </div>
-        </div>
+        )}
 
         {/* Profil */}
         <div className="dropdown dropdown-end">
@@ -113,12 +115,6 @@ export default function Header() {
             {user?.email && (
               <li className="text-xs text-center text-gray-400 mb-1 px-2 truncate">{user.email}</li>
             )}
-            <div className="divider my-1" />
-            <li>
-              <Link to={user?.is_superuser ? PATHS.ADMIN_PROFILE : PATHS.PROFILE}>
-                Profil
-              </Link>
-            </li>
             <div className="divider my-1" />
             <li>
               <a onClick={handleLogout} className="cursor-pointer text-red-500 font-medium">

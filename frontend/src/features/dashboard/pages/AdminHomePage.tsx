@@ -28,7 +28,7 @@ export default function AdminHomePage() {
   const totalBoutiques  = boutiques.length;
   const activeBoutiques = boutiques.filter((b) => b.is_active).length;
   const inactiveBoutiques = totalBoutiques - activeBoutiques;
-  const totalUsers      = boutiques.reduce((sum, b) => sum + b.user_count, 0);
+  const totalUsers = boutiques.reduce((sum, b) => sum + b.user_count, 0);
 
   if (loading) return (
     <div className="flex items-center justify-center min-h-[50vh]">

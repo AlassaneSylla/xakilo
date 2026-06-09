@@ -5,7 +5,7 @@ import type { Removal } from '../../stock/removals/types';
 type Props = { selectedInvoice: Removal | null };
 
 const STATUS_LABELS: Record<string, { label: string; color: string }> = {
-  payee:               { label: 'Payée',                  color: 'text-green-600' },
+  payee: { label: 'Payée', color: 'text-green-600' },
   partiellement_payee: { label: 'Partiellement payée',    color: 'text-amber-500' },
   en_attente:          { label: 'En attente de paiement', color: 'text-amber-500' },
   annulee:             { label: 'Annulée',                color: 'text-red-500'   },

@@ -34,13 +34,13 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
 
 export default function BoutiquesPage() {
   const { boutiques, loading, refetch } = useBoutiques();
-  const [mode, setMode]                 = useState<ModalMode>('add');
-  const [showModal, setShowModal]       = useState(false);
-  const [selected, setSelected]         = useState<Boutique | null>(null);
-  const [form, setForm]                 = useState<BoutiquePayload>(EMPTY_BOUTIQUE);
-  const [owner, setOwner]               = useState<OwnerForm>(EMPTY_OWNER);
+  const [mode, setMode] = useState<ModalMode>('add');
+  const [showModal, setShowModal] = useState(false);
+  const [selected, setSelected] = useState<Boutique | null>(null);
+  const [form, setForm] = useState<BoutiquePayload>(EMPTY_BOUTIQUE);
+  const [owner, setOwner] = useState<OwnerForm>(EMPTY_OWNER);
   const [ownerNewPassword, setOwnerNewPassword] = useState('');
-  const [saving, setSaving]             = useState(false);
+  const [saving, setSaving] = useState(false);
 
   const bf = (k: keyof BoutiquePayload) => (e: React.ChangeEvent<HTMLInputElement>) =>
     setForm((p) => ({ ...p, [k]: e.target.value }));
@@ -159,7 +159,7 @@ export default function BoutiquesPage() {
 
   if (loading) return (
     <div className="flex items-center justify-center min-h-[50vh]">
-      <span className="loading loading-spinner loading-lg text-[var(--primary)]" />
+      <span className="loading loading-spinner loading-lg text-(--primary)" />
     </div>
   );
 
@@ -183,7 +183,7 @@ export default function BoutiquesPage() {
             <div className="card-body gap-3">
               <div className="flex justify-between items-start">
                 <div className="flex items-center gap-2">
-                  <Store size={18} className="text-[var(--primary)]" />
+                  <Store size={18} className="text-(--primary)" />
                   <h2 className="font-bold text-base">{b.name}</h2>
                 </div>
                 <div className="flex gap-1">
@@ -205,9 +205,9 @@ export default function BoutiquesPage() {
 
               {/* Infos boutique */}
               <div className="text-sm space-y-1 text-gray-500">
-                {b.phone   && <p>📞 <span className="font-medium text-gray-700">{b.phone}</span></p>}
+                {b.phone && <p>📞 <span className="font-medium text-gray-700">{b.phone}</span></p>}
                 {b.address && <p>📍 {b.address}</p>}
-                {b.email   && <p>✉️ {b.email}</p>}
+                {b.email && <p>✉️ {b.email}</p>}
               </div>
 
               {/* Section propriétaire */}
@@ -260,7 +260,7 @@ export default function BoutiquesPage() {
               {/* ── Section boutique ── */}
               <div>
                 <div className="flex items-center gap-2 mb-3 pb-1 border-b border-base-300">
-                  <Store size={15} className="text-[var(--primary)]" />
+                  <Store size={15} className="text-(--primary)" />
                   <span className="font-semibold text-sm">Informations de la boutique</span>
                 </div>
                 <div className="space-y-3">
@@ -289,7 +289,7 @@ export default function BoutiquesPage() {
               {mode === 'add' && (
                 <div>
                   <div className="flex items-center gap-2 mb-3 pb-1 border-b border-base-300">
-                    <User size={15} className="text-[var(--primary)]" />
+                    <User size={15} className="text-(--primary)" />
                     <span className="font-semibold text-sm">Propriétaire</span>
                     <span className="text-xs text-red-500 ml-1 font-medium">— obligatoire</span>
                   </div>
@@ -332,7 +332,7 @@ export default function BoutiquesPage() {
               {mode === 'edit' && (
                 <div>
                   <div className="flex items-center gap-2 mb-3 pb-1 border-b border-base-300">
-                    <KeyRound size={15} className="text-[var(--primary)]" />
+                    <KeyRound size={15} className="text-(--primary)" />
                     <span className="font-semibold text-sm">Propriétaire</span>
                   </div>
                   {selected?.owner_name ? (

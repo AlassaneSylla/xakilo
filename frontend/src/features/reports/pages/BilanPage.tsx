@@ -171,7 +171,7 @@ export default function BilanPage() {
                   onClick={() => { setPeriod(t.key); setDateFrom(''); setDateTo(''); setShowFilter(false); }}
                   className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all ${
                     period === t.key && !isCustom
-                      ? 'bg-[var(--black)] text-white'
+                      ? 'bg-(--black) text-white'
                       : 'bg-base-200 hover:bg-base-300'
                   }`}
                 >
@@ -186,7 +186,7 @@ export default function BilanPage() {
                 <button
                   onClick={() => setShowFilter((v) => !v)}
                   className={`btn btn-sm flex items-center gap-2 ${
-                    isCustom ? 'bg-[var(--primary)] text-black' : 'bg-base-200 hover:bg-base-300'
+                    isCustom ? 'bg-(--primary) text-black' : 'bg-base-200 hover:bg-base-300'
                   }`}
                 >
                   <CalendarDays size={14} />

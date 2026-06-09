@@ -41,7 +41,7 @@ export default function InputOutputWidget({ transactions }: { transactions: Rece
                   </span>
                 )}
               </td>
-              <td className={`font-medium truncate max-w-[140px] ${t.destination === 'perte' ? 'text-red-500' : ''}`}>
+              <td className={`font-medium truncate max-w-35 ${t.destination === 'perte' ? 'text-red-500' : ''}`}>
                 {t.product}
               </td>
               <td>{t.quantity}</td>

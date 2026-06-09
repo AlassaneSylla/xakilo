@@ -14,13 +14,13 @@ function fmt(n: number | null | undefined) {
 export default function CashSessionPage() {
   const { session, loading, needsSession, open } = useCashSession();
   const { isOwner } = usePermission();
-  const [showClose, setShowClose]   = useState(false);
-  const [history, setHistory]       = useState<CashSession[]>([]);
+  const [showClose, setShowClose] = useState(false);
+  const [history, setHistory] = useState<CashSession[]>([]);
   const [histLoading, setHistLoading] = useState(false);
-  const [opening, setOpening]       = useState(false);
-  const [balance, setBalance]       = useState('');
+  const [opening, setOpening] = useState(false);
+  const [balance, setBalance] = useState('');
   const [filterDate, setFilterDate] = useState('');
-  const [histPage,   setHistPage]   = useState(1);
+  const [histPage,   setHistPage] = useState(1);
   const HIST_PER_PAGE = 10;
 
   useEffect(() => {

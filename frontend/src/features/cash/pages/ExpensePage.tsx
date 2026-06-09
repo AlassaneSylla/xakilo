@@ -12,8 +12,8 @@ const EMPTY: ExpensePayload = { amount: 0, description: '', payment_mode: 'espec
 export default function ExpensePage() {
   const { session, needsSession } = useCashSession();
   const [expenses, setExpenses] = useState<Expense[]>([]);
-  const [form, setForm]         = useState<ExpensePayload>({ ...EMPTY });
-  const [loading, setLoading]   = useState(false);
+  const [form, setForm] = useState<ExpensePayload>({ ...EMPTY });
+  const [loading, setLoading] = useState(false);
 
   const blocked = needsSession && !session;
 

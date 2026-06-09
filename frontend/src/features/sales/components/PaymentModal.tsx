@@ -100,7 +100,7 @@ export default function PaymentModal({ removal, onClose, onSuccess }: Props) {
                   onClick={() => setMode(m.value)}
                   className={`flex flex-col items-center gap-1 p-3 rounded-lg border text-sm font-medium transition-all ${
                     mode === m.value
-                      ? 'bg-[var(--primary)] text-black border-[var(--primary)]'
+                      ? 'bg-(--primary) text-black border-(--primary)'
                       : 'bg-base-200 border-base-300 text-gray-600 hover:bg-base-300'
                   }`}
                 >
