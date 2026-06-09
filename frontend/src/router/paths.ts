@@ -17,5 +17,6 @@ export const PATHS = {
   PROFILE:      '/profile',
   SETTINGS:     '/settings',
   BOUTIQUES:    '/boutiques',
-  ADMIN_HOME:   '/admin',
+  ADMIN_HOME:    '/admin',
+  ADMIN_PROFILE: '/admin/profile',
 } as const;

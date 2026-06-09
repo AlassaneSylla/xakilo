@@ -42,15 +42,15 @@ export default function Header() {
         {/* Logo */}
         <Link to={PATHS.HOME} className="flex items-center gap-2 shrink-0">
           <img src={logo} alt="Logo Xakilo" className="w-9 object-contain" />
-          <span className="text-lg font-bold text-[var(--primary)] hidden sm:block">Xakilo</span>
+          <span className="text-lg font-bold text-(--primary) hidden sm:block">Xakilo</span>
         </Link>
 
         <div className="w-px h-8 bg-base-300 shrink-0" />
 
         {/* Salutation */}
         <div className="flex flex-col leading-tight flex-1">
-          <span className="text-sm font-semibold text-[var(--black)]">
-            Bonjour, <span className="text-[var(--primary)]">{firstName}</span> 👋
+          <span className="text-sm font-semibold text-(--black)">
+            Bonjour, <span className="text-(--primary)">{firstName}</span> 👋
           </span>
           <span className="text-xs text-gray-400">{formatDate()}</span>
         </div>
@@ -58,7 +58,7 @@ export default function Header() {
         {/* Nom de la boutique — centré absolument */}
         {user?.boutique_name && (
           <div className="absolute left-1/2 -translate-x-1/2 pointer-events-none select-none">
-            <p className="text-sm font-bold uppercase tracking-widest text-[var(--black)]">
+            <p className="text-sm font-bold uppercase tracking-widest text-(--black)">
               {user.boutique_name}
             </p>
           </div>
@@ -85,7 +85,7 @@ export default function Header() {
               <div className="card-actions">
                 <Link
                   to={PATHS.LOW_STOCK}
-                  className="btn btn-xs btn-outline hover:text-[color:var(--brokenWhite)] hover:bg-[color:var(--black)]"
+                  className="btn btn-xs btn-outline hover:text-(--brokenWhite) hover:bg-(--black)"
                 >
                   Voir détails
                 </Link>
@@ -97,7 +97,7 @@ export default function Header() {
         {/* Profil */}
         <div className="dropdown dropdown-end">
           <div tabIndex={0} role="button" className="btn btn-ghost btn-circle avatar">
-            <div className="w-8 rounded-full ring ring-[var(--primary)] ring-offset-2">
+            <div className="w-8 rounded-full ring ring-(--primary) ring-offset-2">
               <img alt="user" src={userIcon} />
             </div>
           </div>
@@ -105,7 +105,7 @@ export default function Header() {
             tabIndex={0}
             className="menu menu-sm dropdown-content bg-base-200 rounded-box z-10 mt-3 w-52 p-2 shadow"
           >
-            <li className="text-[var(--brokenWhite)] text-center mb-1 font-semibold bg-[var(--black)] uppercase rounded px-2 py-1 text-xs">
+            <li className="text-(--brokenWhite) text-center mb-1 font-semibold bg-(--black) uppercase rounded px-2 py-1 text-xs">
               {user?.first_name && user?.last_name
                 ? `${user.first_name} ${user.last_name}`
                 : user?.username ?? '—'}
@@ -114,7 +114,11 @@ export default function Header() {
               <li className="text-xs text-center text-gray-400 mb-1 px-2 truncate">{user.email}</li>
             )}
             <div className="divider my-1" />
-            <li><Link to={PATHS.PROFILE}>Profil</Link></li>
+            <li>
+              <Link to={user?.is_superuser ? PATHS.ADMIN_PROFILE : PATHS.PROFILE}>
+                Profil
+              </Link>
+            </li>
             <div className="divider my-1" />
             <li>
               <a onClick={handleLogout} className="cursor-pointer text-red-500 font-medium">

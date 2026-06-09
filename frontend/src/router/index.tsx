@@ -22,8 +22,9 @@ import BilanFinancierPage   from '../features/reports/pages/BilanFinancierPage';
 import CashSessionPage      from '../features/cash/pages/CashSessionPage';
 import ExpensePage          from '../features/cash/pages/ExpensePage';
 import UsersPage            from '../features/users/pages/UsersPage';
-import ProfilePage     from '../features/users/pages/ProfilePage';
-import SettingsPage    from '../features/settings/pages/SettingsPage';
+import ProfilePage      from '../features/users/pages/ProfilePage';
+import AdminProfilePage from '../features/users/pages/AdminProfilePage';
+import SettingsPage     from '../features/settings/pages/SettingsPage';
 import BoutiquesPage   from '../features/boutiques/pages/BoutiquesPage';
 
 const router = createBrowserRouter([
@@ -43,8 +44,9 @@ const router = createBrowserRouter([
             element: <AdminLayout />,
             errorElement: <ErrorBoundary />,
             children: [
-              { path: PATHS.ADMIN_HOME, element: <AdminHomePage /> },
-              { path: PATHS.BOUTIQUES,  element: <BoutiquesPage /> },
+              { path: PATHS.ADMIN_HOME,    element: <AdminHomePage /> },
+              { path: PATHS.BOUTIQUES,     element: <BoutiquesPage /> },
+              { path: PATHS.ADMIN_PROFILE, element: <AdminProfilePage /> },
             ],
           },
         ],
