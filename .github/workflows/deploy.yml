@@ -1,8 +1,7 @@
 name: Deploy
 
 on:
-  push:
-    branches: [main]        # se déclenche uniquement quand on merge sur main
+  workflow_dispatch:        # déclenchement manuel uniquement (GitHub → Actions → Run workflow)
 
 jobs:
   deploy:

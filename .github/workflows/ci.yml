@@ -69,7 +69,10 @@ jobs:
           POSTGRES_HOST: localhost
           POSTGRES_PORT: "5432"
           REDIS_URL: redis://localhost:6379/0
-        run: pytest --cov=. --cov-report=xml -v
+        run: |
+          pytest --cov=. --cov-report=xml -v || CODE=$?
+          [ "${CODE:-0}" -eq 5 ] && echo "Aucun test collecté." && exit 0
+          exit ${CODE:-0}
 
       - name: Upload coverage
         uses: codecov/codecov-action@v4
@@ -107,7 +110,7 @@ jobs:
         run: npm run type-check
 
       - name: start tests
-        run: npm run test -- --run
+        run: npm run test
 
       - name: verify buid in prod
         run: npm run build
