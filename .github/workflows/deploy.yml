@@ -1,0 +1,64 @@
+name: Deploy
+
+on:
+  push:
+    branches: [main]        # se déclenche uniquement quand on merge sur main
+
+jobs:
+  deploy:
+    name: Deploy to production
+    runs-on: ubuntu-latest
+    environment: production  # environnement GitHub avec ses propres secrets
+
+    steps:
+      - name: Récupérer le code
+        uses: actions/checkout@v4
+
+      # ── Build et push des images Docker ─────────────
+      - name: Se connecter à Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Build et push image backend
+        uses: docker/build-push-action@v5
+        with:
+          context:    ./backend
+          file:       ./backend/Dockerfile.prod
+          push:       true
+          tags: |
+            ${{ secrets.DOCKER_USERNAME }}/xakilo-backend:latest
+            ${{ secrets.DOCKER_USERNAME }}/xakilo-backend:${{ github.sha }}
+
+      - name: Build et push image frontend
+        uses: docker/build-push-action@v5
+        with:
+          context:    ./frontend
+          file:       ./frontend/Dockerfile.prod
+          push:       true
+          tags: |
+            ${{ secrets.DOCKER_USERNAME }}/xakilo-frontend:latest
+            ${{ secrets.DOCKER_USERNAME }}/xakilo-frontend:${{ github.sha }}
+
+      # ── Déploiement sur le serveur via SSH ───────────
+      - name: Déployer sur le serveur
+        uses: appleboy/ssh-action@v1
+        with:
+          host:     ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key:      ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            cd /opt/xakilo
+
+            # Mettre à jour le .env avec le nouveau tag d'image
+            export IMAGE_TAG=${{ github.sha }}
+
+            # Tirer les nouvelles images
+            docker compose -f docker-compose.prod.yml pull
+
+            # Redémarrer les services sans downtime
+            docker compose -f docker-compose.prod.yml up -d --remove-orphans
+
+            # Nettoyer les anciennes images
+            docker system prune -f

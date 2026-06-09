@@ -3,12 +3,13 @@
   "version": "1.0.0",
   "private": true,
   "workspaces": [
-    "frontend",
-    "backend"
+    "frontend"
   ],
   "scripts": {
-    "dev:frontend": "npm run dev --workspace=frontend",
-    "dev:backend": "npm run dev --workspace=backend",
-    "dev": "npm run dev --workspaces --if-present"
+    "dev":      "docker compose up",
+    "down":     "docker compose down",
+    "build":    "docker compose build",
+    "logs":     "docker compose logs -f",
+    "frontend": "npm run dev --workspace=frontend"
   }
 }

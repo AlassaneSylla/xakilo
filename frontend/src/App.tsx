@@ -1,32 +1,14 @@
-import { useContext } from "react";
-import { Routes, Route, Navigate } from "react-router-dom";
+import { RouterProvider } from 'react-router-dom';
+import { Toaster } from 'react-hot-toast';
 
-import { AuthProvider, AuthContext } from "./context/AuthContext";
-import Layout from "./components/Layout";
-import "./App.css";
-import Login from "./pages/Login";
+import { Providers } from './providers';
+import router from './router';
 
-
-function App() {
+export default function App() {
   return (
-    <AuthProvider>
-      <AppRoutes />
-    </AuthProvider>
+    <Providers>
+      <RouterProvider router={router} />
+      <Toaster position="top-center" reverseOrder={false} />
+    </Providers>
   );
 }
-
-function AppRoutes() {
-  const { isAuthenticated } = useContext(AuthContext);
-
-  return (
-    <Routes>
-      <Route path="/login" element={<Login />} />
-      <Route
-        path="/*"
-        element={isAuthenticated ? (<Layout>{null}</Layout>) : (<Navigate to="/login" replace />)}
-      />
-    </Routes>
-  );
-}
-
-export default App;

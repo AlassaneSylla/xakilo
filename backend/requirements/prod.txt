@@ -1,0 +1,4 @@
+-r base.txt
+
+django-redis==5.4.0
+django-defender==0.9.8

@@ -1,0 +1,10 @@
+Django==5.2.7
+djangorestframework==3.16.1
+djangorestframework_simplejwt==5.5.1
+psycopg2-binary==2.9.11
+django-cors-headers==4.9.0
+drf-yasg==1.21.11
+gunicorn==23.0.0
+python-dotenv==1.0.1
+django-simple-history==3.8.0
+Pillow==11.2.1
