@@ -14,6 +14,6 @@ CORS_ALLOW_ALL_ORIGINS = True   # pratique en dev, jamais en prod
 EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
 
 # Django debug toolbar
-INSTALLED_APPS += ["debug_toolbar"]
-MIDDLEWARE    += ["debug_toolbar.middleware.DebugToolbarMiddleware"]
+INSTALLED_APPS += ["debug_toolbar"]  # noqa: F405
+MIDDLEWARE    += ["debug_toolbar.middleware.DebugToolbarMiddleware"]  # noqa: F405
 INTERNAL_IPS   = ["127.0.0.1"]
