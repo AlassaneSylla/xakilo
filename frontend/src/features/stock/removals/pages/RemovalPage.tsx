@@ -75,8 +75,9 @@ export default function RemovalPage() {
       await cancelRemoval(removal.id);
       toast.success('Sortie annulée — stock restauré');
       refetch();
-    } catch (err: any) {
-      toast.error(err?.response?.data?.error ?? 'Erreur lors de l\'annulation');
+    } catch (err) {
+      const e = err as { response?: { data?: { error?: string } } };
+      toast.error(e?.response?.data?.error ?? 'Erreur lors de l\'annulation');
     }
   };
 

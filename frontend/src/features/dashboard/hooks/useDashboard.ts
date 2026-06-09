@@ -22,36 +22,66 @@ export type RecentTransaction = {
   destination?: string;
 };
 
-function buildMonthlyChart(entries: any[], removals: any[]): MonthlyBar[] {
+type RawEntry = {
+  id: number;
+  date_register: string;
+  quantity: number;
+  product_name?: string;
+  product?: number;
+  created_by?: string;
+  created_by_username?: string;
+};
+
+type RawRemoval = {
+  id: number;
+  date_register?: string;
+  destination?: string;
+  created_by_username?: string;
+  products_label?: string;
+  invoice?: {
+    products?: { product_name: string; quantity: number }[];
+    date_created?: string;
+  };
+};
+
+type RawProduct = {
+  id: number;
+  category?: string;
+  stock?: number;
+};
+
+type InternalBar = MonthlyBar & { _year: number; _month: number };
+
+function buildMonthlyChart(entries: RawEntry[], removals: RawRemoval[]): MonthlyBar[] {
   const now = new Date();
-  const bars: MonthlyBar[] = Array.from({ length: 12 }, (_, i) => {
+  const bars: InternalBar[] = Array.from({ length: 12 }, (_, i) => {
     const d = new Date(now.getFullYear(), now.getMonth() - 11 + i, 1);
-    return { mois: MONTH_LABELS[d.getMonth()], in: 0, out: 0, _year: d.getFullYear(), _month: d.getMonth() } as any;
+    return { mois: MONTH_LABELS[d.getMonth()], in: 0, out: 0, _year: d.getFullYear(), _month: d.getMonth() };
   });
 
-  entries.forEach((e: any) => {
+  entries.forEach((e) => {
     const d = new Date(e.date_register);
-    const bar = bars.find((b: any) => b._year === d.getFullYear() && b._month === d.getMonth());
+    const bar = bars.find((b) => b._year === d.getFullYear() && b._month === d.getMonth());
     if (bar) bar.in += e.quantity ?? 1;
   });
 
-  removals.forEach((r: any) => {
+  removals.forEach((r) => {
     const raw = r.date_register;
     if (!raw) return;
     const d = new Date(raw);
-    const bar = bars.find((b: any) => b._year === d.getFullYear() && b._month === d.getMonth());
+    const bar = bars.find((b) => b._year === d.getFullYear() && b._month === d.getMonth());
     if (bar) {
-      const qty = r.invoice?.products?.reduce((s: number, p: any) => s + (p.quantity ?? 0), 0) ?? 1;
+      const qty = r.invoice?.products?.reduce((s, p) => s + (p.quantity ?? 0), 0) ?? 1;
       bar.out += qty;
     }
   });
 
-  return bars.map(({ mois, in: i, out }: any) => ({ mois, in: i, out }));
+  return bars.map(({ mois, in: i, out }) => ({ mois, in: i, out }));
 }
 
-function buildCategoryChart(products: any[]): CategorySlice[] {
+function buildCategoryChart(products: RawProduct[]): CategorySlice[] {
   const map: Record<string, number> = {};
-  products.forEach((p: any) => {
+  products.forEach((p) => {
     if ((p.stock ?? 0) <= 0) return;
     const cat = p.category || 'Autres';
     map[cat] = (map[cat] ?? 0) + (p.stock ?? 0);
@@ -59,10 +89,10 @@ function buildCategoryChart(products: any[]): CategorySlice[] {
   return Object.entries(map).map(([name, value]) => ({ name, value }));
 }
 
-function buildRecentTransactions(entries: any[], removals: any[]): RecentTransaction[] {
+function buildRecentTransactions(entries: RawEntry[], removals: RawRemoval[]): RecentTransaction[] {
   const list: RecentTransaction[] = [];
 
-  entries.forEach((e: any) => {
+  entries.forEach((e) => {
     list.push({
       id: `e-${e.id}`,
       date: e.date_register,
@@ -73,9 +103,9 @@ function buildRecentTransactions(entries: any[], removals: any[]): RecentTransac
     });
   });
 
-  removals.forEach((r: any) => {
+  removals.forEach((r) => {
     const date = r.date_register ?? '';
-    const qty = r.invoice?.products?.reduce((s: number, p: any) => s + (p.quantity ?? 0), 0) ?? 1;
+    const qty = r.invoice?.products?.reduce((s, p) => s + (p.quantity ?? 0), 0) ?? 1;
     list.push({
       id: `r-${r.id}`,
       date,
@@ -111,17 +141,17 @@ export function useDashboard() {
       client.get('products/low-stock/'),
     ])
       .then(([products, removals, entries, lowStock]) => {
-        const prods    = products.data  as any[];
-        const rems     = removals.data  as any[];
-        const ents     = entries.data   as any[];
+        const prods = products.data as RawProduct[];
+        const rems  = removals.data as RawRemoval[];
+        const ents  = entries.data  as RawEntry[];
 
-        const dailyRemovals = rems.filter((r: any) => {
+        const dailyRemovals = rems.filter((r) => {
           if (!r.date_register) return false;
           const d = new Date(r.date_register);
           return d.getDate() === today.getDate() && d.getMonth() === today.getMonth() && d.getFullYear() === today.getFullYear();
         });
 
-        const monthlyEntries = ents.filter((e: any) => {
+        const monthlyEntries = ents.filter((e) => {
           const d = new Date(e.date_register);
           return d.getMonth() === today.getMonth() && d.getFullYear() === today.getFullYear();
         });
@@ -130,7 +160,7 @@ export function useDashboard() {
           totalProducts:      prods.length,
           removalsOfTheDay:   dailyRemovals.length,
           entriesOfTheMonth:  monthlyEntries.length,
-          lowStockCount:      lowStock.data.count ?? 0,
+          lowStockCount:      (lowStock.data as { count?: number }).count ?? 0,
         });
 
         setMonthlyChartData(buildMonthlyChart(ents, rems));

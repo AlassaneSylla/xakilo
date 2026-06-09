@@ -93,14 +93,14 @@ export default function BoutiquesPage() {
           ...owner,
           role: 'OWNER',
           boutique: boutique.id,
-        } as any);
+        });
         toast.success('Boutique créée avec son propriétaire');
       } else if (selected) {
         await patchBoutique(selected.id, form);
 
         // Mise à jour du mot de passe propriétaire si renseigné
         if (ownerNewPassword && selected.owner_id) {
-          await updateUser(selected.owner_id, { password: ownerNewPassword } as any);
+          await updateUser(selected.owner_id, { password: ownerNewPassword });
           toast.success('Mot de passe propriétaire mis à jour');
         }
 
@@ -108,8 +108,9 @@ export default function BoutiquesPage() {
       }
       closeModal();
       refetch();
-    } catch (err: any) {
-      toast.error(err?.response?.data?.error ?? 'Erreur lors de la sauvegarde');
+    } catch (err) {
+      const e = err as { response?: { data?: { error?: string } } };
+      toast.error(e?.response?.data?.error ?? 'Erreur lors de la sauvegarde');
     } finally {
       setSaving(false);
     }

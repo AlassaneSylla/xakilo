@@ -1,6 +1,3 @@
-from apps.stock.models.entry import Entry
-from apps.products.models import Product
-
 def adjust_product_stock_on_entry_save(entry, old_quantity=None, old_product=None):
     """
     Ajuste le stock du produit après une création ou modification d'entrée.

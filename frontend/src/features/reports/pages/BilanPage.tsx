@@ -8,7 +8,7 @@ import { TrendingUp, TrendingDown, Download, CalendarDays } from 'lucide-react';
 
 import { useReports } from '../hooks/useReports';
 import { usePermission } from '../../../shared/hooks/usePermission';
-import type { ReportPeriod } from '../api/reportsApi';
+import type { ReportPeriod, ReportFinancier, ReportMateriel, WeeklyPoint, EvolutionPoint } from '../api/reportsApi';
 
 function fmt(n: number | undefined | null) {
   return (n ?? 0).toLocaleString('fr-FR');
@@ -38,7 +38,7 @@ function SectionTitle({ children }: { children: React.ReactNode }) {
   );
 }
 
-function FinancierSection({ fin, period }: { fin: any; period: ReportPeriod }) {
+function FinancierSection({ fin, period }: { fin: ReportFinancier | null | undefined; period: ReportPeriod }) {
   if (!fin) return null;
   const diff = fin.ca_reel - (fin.prev_ca ?? 0);
   const pct  = fin.prev_ca ? Math.round((diff / fin.prev_ca) * 100) : null;
@@ -62,7 +62,7 @@ function FinancierSection({ fin, period }: { fin: any; period: ReportPeriod }) {
   );
 }
 
-function MaterielSection({ mat }: { mat: any }) {
+function MaterielSection({ mat }: { mat: ReportMateriel | null | undefined }) {
   if (!mat) return null;
   return (
     <div className="space-y-4">
@@ -77,7 +77,7 @@ function MaterielSection({ mat }: { mat: any }) {
   );
 }
 
-function WeeklyChart({ weekly }: { weekly: any[] }) {
+function WeeklyChart({ weekly }: { weekly: WeeklyPoint[] }) {
   if (!weekly?.length) return null;
   const chartData = weekly.map((w) => ({ semaine: `S${w.week}`, CA: w.ca_reel }));
   return (
@@ -96,7 +96,7 @@ function WeeklyChart({ weekly }: { weekly: any[] }) {
   );
 }
 
-function YearlyEvolutionChart({ evolution }: { evolution: any[] }) {
+function YearlyEvolutionChart({ evolution }: { evolution: EvolutionPoint[] }) {
   if (!evolution?.length) return null;
   const chartData = evolution.map((m) => ({
     mois:             MONTH_LABELS[m.mois - 1],

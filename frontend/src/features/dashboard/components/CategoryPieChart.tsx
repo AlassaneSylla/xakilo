@@ -7,7 +7,9 @@ import type { CategorySlice } from '../hooks/useDashboard';
 const COLORS = ['#6366f1','#22c55e','#f59e0b','#ef4444','#3b82f6','#ec4899','#14b8a6','#f97316'];
 const RADIAN = Math.PI / 180;
 
-const renderLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, percent }: any) => {
+type PieLabelProps = { cx: number; cy: number; midAngle: number; innerRadius: number; outerRadius: number; percent: number };
+
+const renderLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, percent }: PieLabelProps) => {
   if ((percent ?? 0) < 0.05) return null;
   const r = innerRadius + (outerRadius - innerRadius) * 0.5;
   const x = cx + r * Math.cos(-(midAngle ?? 0) * RADIAN);

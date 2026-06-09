@@ -65,6 +65,7 @@ export default function BilanFinancierPage() {
       .finally(() => setUnpaidLoading(false));
   };
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { fetchUnpaid(); }, [isManager]);
 
   const openPayModal = (inv: UnpaidInvoice) => {

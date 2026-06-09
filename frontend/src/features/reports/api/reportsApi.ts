@@ -4,6 +4,32 @@ export type ReportPeriod = 'day' | 'month' | 'year' | 'custom';
 
 export type ReportSection = 'materiel' | 'financier' | 'both';
 
+export type ReportFinancier = {
+  ca_reel: number;
+  prev_ca?: number;
+  creances: number;
+  cout_achat: number;
+  marge_brute: number;
+  charge_pertes: number;
+};
+
+export type ReportMateriel = {
+  qty_entrees: number;
+  qty_vendues: number;
+  qty_pertes: number;
+  qty_dons: number;
+};
+
+export type WeeklyPoint    = { week: number; ca_reel: number };
+export type EvolutionPoint = { mois: number; ca_reel: number; charge_pertes: number };
+
+export type ReportData = {
+  financier?: ReportFinancier;
+  materiel?: ReportMateriel;
+  weekly?: WeeklyPoint[];
+  evolution?: EvolutionPoint[];
+};
+
 export async function fetchReport(
   period: ReportPeriod,
   options?: { date_from?: string; date_to?: string; section?: ReportSection },

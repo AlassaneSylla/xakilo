@@ -13,6 +13,7 @@ import Form from '../../../../shared/components/ui/Form';
 import { useStockAlert } from '../../../../providers/StockAlertProvider';
 import { useCashSession } from '../../../../providers/CashSessionProvider';
 import type { Product } from '../../../products/types';
+import type { Entry } from '../types';
 
 function isSameDay(dateStr: string | null | undefined, filter: string): boolean {
   if (!filter || !dateStr) return false;
@@ -53,7 +54,7 @@ export default function EntryPage() {
     { name: 'supplier', label: 'Fournisseur', required: true },
   ];
 
-  const filtered = entries.filter((e: any) => {
+  const filtered = entries.filter((e: Entry) => {
     const q = search.toLowerCase();
     const matchSearch = !search
       || (e.product_name ?? '').toLowerCase().includes(q)
@@ -65,9 +66,9 @@ export default function EntryPage() {
   const total        = Math.ceil(filtered.length / PER_PAGE);
   const currentItems = filtered.slice((currentPage - 1) * PER_PAGE, currentPage * PER_PAGE);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>, setter: any) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>, setter: React.Dispatch<React.SetStateAction<Record<string, string | number>>>) => {
     const { name, value } = e.target;
-    setter((prev: any) => {
+    setter((prev) => {
       if (name === 'product') {
         const sel = products.find((p) => p.id === Number(value));
         return { ...prev, product: Number(value), category: sel?.category ?? '' };
@@ -165,7 +166,7 @@ export default function EntryPage() {
             </tr>
           </thead>
           <tbody>
-            {currentItems.map((row: any) => (
+            {currentItems.map((row) => (
               <tr key={row.id} className="hover:bg-base-200">
                 <th className="font-semibold">{row.product_name}</th>
                 <td>{row.category}</td>

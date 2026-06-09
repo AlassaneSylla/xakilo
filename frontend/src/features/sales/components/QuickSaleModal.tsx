@@ -49,7 +49,7 @@ export default function QuickSaleModal({ onSuccess }: Props) {
         const p = products.find((x) => x.id === Number(value));
         if (p) next[idx] = { ...next[idx], product_id: p.id, product_name: p.product_name, unit_price: p.unit_price ?? 0 };
       } else {
-        (next[idx] as any)[field] = field === 'quantity' ? Number(value) : value;
+        (next[idx] as Record<string, string | number>)[field] = field === 'quantity' ? Number(value) : value;
       }
       return next;
     });
@@ -86,8 +86,9 @@ export default function QuickSaleModal({ onSuccess }: Props) {
       setPaymentMode('especes');
       (document.getElementById('quick_sale_modal') as HTMLDialogElement)?.close();
       onSuccess?.(created);
-    } catch (err: any) {
-      toast.error(err?.response?.data?.error ?? 'Erreur lors de la vente');
+    } catch (err) {
+      const e = err as { response?: { data?: { error?: string } } };
+      toast.error(e?.response?.data?.error ?? 'Erreur lors de la vente');
     } finally {
       setSaving(false);
     }

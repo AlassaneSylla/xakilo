@@ -23,4 +23,5 @@ export type UserPayload = {
   email: string;
   password: string;
   role?: Role;
+  boutique?: number;
 };

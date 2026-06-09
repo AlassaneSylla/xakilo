@@ -5,7 +5,7 @@ from rest_framework import status
 
 from .serializers import UserSerializer, BoutiqueSerializer
 from .models import User, Boutique
-from .permissions import IsBoutiqueOwner, IsSuperUser, MAX_USERS_PER_BOUTIQUE
+from .permissions import IsSuperUser, MAX_USERS_PER_BOUTIQUE
 
 
 # ── Helpers ──────────────────────────────────────────────────────────────────

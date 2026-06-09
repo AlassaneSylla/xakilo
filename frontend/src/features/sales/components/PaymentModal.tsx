@@ -47,8 +47,9 @@ export default function PaymentModal({ removal, onClose, onSuccess }: Props) {
       toast.success(isFullPay ? 'Facture soldée ✓' : 'Paiement partiel enregistré');
       onSuccess(updated);
       onClose();
-    } catch (err: any) {
-      toast.error(err?.response?.data?.error ?? 'Erreur lors de l\'enregistrement');
+    } catch (err) {
+      const e = err as { response?: { data?: { error?: string } } };
+      toast.error(e?.response?.data?.error ?? 'Erreur lors de l\'enregistrement');
     } finally {
       setSaving(false);
     }

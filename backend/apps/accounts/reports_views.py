@@ -8,7 +8,7 @@ from rest_framework import status
 from django.utils import timezone
 from django.db.models import Sum
 
-from apps.stock.models.removal import Removal, RemovalItem
+from apps.stock.models.removal import Removal
 from apps.stock.models.entry   import Entry
 from apps.stock.models.expense import Expense
 from apps.stock.models.payment import Payment
@@ -319,8 +319,11 @@ def get_reports(request):
             wk   = r.date_register.isocalendar()[1]
             paid = sum(p.amount for p in r.payments.all())
             e = next((w for w in weekly if w['week'] == wk), None)
-            if e: e['ca_reel'] += paid; e['count'] += 1
-            else: weekly.append({'week': wk, 'ca_reel': paid, 'count': 1})
+            if e:
+                e['ca_reel'] += paid
+                e['count'] += 1
+            else:
+                weekly.append({'week': wk, 'ca_reel': paid, 'count': 1})
         weekly.sort(key=lambda x: x['week'])
 
         prev_start = (now.replace(day=1) - timedelta(days=1)).replace(day=1)

@@ -4,7 +4,6 @@ import { Bell } from 'lucide-react';
 
 import { useAuth } from '../providers/AuthProvider';
 import { useStockAlert } from '../providers/StockAlertProvider';
-import { usePermission } from '../shared/hooks/usePermission';
 import { PATHS } from '../router/paths';
 import LogoutOverlay from './LogoutOverlay';
 import logo from '../assets/xakilo_sm.png';

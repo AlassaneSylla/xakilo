@@ -9,7 +9,7 @@ import Button from '../../../shared/components/ui/Button';
 import IconButton from '../../../shared/components/ui/IconButton';
 import Pagination from '../../../shared/components/ui/Pagination';
 import Form from '../../../shared/components/ui/Form';
-import type { Product } from '../types';
+import type { Product, ProductPayload } from '../types';
 
 const CATEGORY_OPTIONS = [
   { label: 'Électronique',  value: 'electronique' },
@@ -42,7 +42,7 @@ export default function ProductsPage() {
   const editModalRef = useRef<ModalHandle>(null);
 
   const [addForm,     setAddForm]     = useState({ ...EMPTY_ADD });
-  const [editForm,    setEditForm]    = useState<any>({});
+  const [editForm,    setEditForm]    = useState<Partial<Product>>({});
   const [editId,      setEditId]      = useState<number | null>(null);
   const [saving,      setSaving]      = useState(false);
   const [search,       setSearch]       = useState('');
@@ -67,7 +67,7 @@ export default function ProductsPage() {
     e.preventDefault();
     setSaving(true);
     try {
-      await create(addForm as any);
+      await create(addForm as ProductPayload);
       toast.success('Produit ajouté !');
       setTimeout(() => addModalRef.current?.close(), 800);
     } catch { toast.error("Erreur lors de l'ajout"); }
@@ -180,7 +180,7 @@ export default function ProductsPage() {
                   <Modal ref={editModalRef} title="Modifier le produit">
                     <Form fields={EDIT_FIELDS} values={editForm} onChange={(e) => {
                       const { name, value, type } = e.target as HTMLInputElement;
-                      setEditForm((p: any) => ({ ...p, [name]: type === 'number' ? Number(value) : value }));
+                      setEditForm((p) => ({ ...p, [name]: type === 'number' ? Number(value) : value }));
                     }} onSubmit={handleEdit} submitLabel="Mettre à jour" loading={saving} />
                   </Modal>
                   <IconButton tooltip="Supprimer" color="danger" onClick={() => handleDelete(row.id)}>

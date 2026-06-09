@@ -42,7 +42,7 @@ export default function SalesPage() {
 
   const totals = calculateTotals(sales);
 
-  const filtered = sales.filter((s: any) => {
+  const filtered = sales.filter((s: Removal) => {
     const q = search.toLowerCase();
     const matchSearch = !search
       || (s.client_name ?? '').toLowerCase().includes(q)
@@ -109,8 +109,8 @@ export default function SalesPage() {
             {currentItems.map((row) => (
               <tr key={row.id} className="hover:bg-base-200">
                 <td className="font-mono text-xs">{row.invoice?.invoice_number ?? '—'}</td>
-                <td>{(row as any).date_register
-                  ? new Date((row as any).date_register).toLocaleDateString('fr-FR')
+                <td>{row.date_register
+                  ? new Date(row.date_register).toLocaleDateString('fr-FR')
                   : row.invoice?.date_created
                     ? new Date(row.invoice.date_created).toLocaleDateString('fr-FR')
                     : '—'}

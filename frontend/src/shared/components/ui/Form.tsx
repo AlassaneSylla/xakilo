@@ -14,7 +14,7 @@ type Field = {
 
 type FormProps = {
   fields: Field[];
-  values: Record<string, any>;
+  values: Record<string, string | number | boolean | null | undefined>;
   onChange: (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => void;
   onSubmit: (e: React.FormEvent) => void;
   submitLabel?: string;

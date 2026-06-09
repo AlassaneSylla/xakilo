@@ -53,6 +53,7 @@ export default function RemovalFormPage() {
         }));
       }
     }).catch(() => {});
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // ── Total estimé à partir des items sélectionnés ──────────────────────

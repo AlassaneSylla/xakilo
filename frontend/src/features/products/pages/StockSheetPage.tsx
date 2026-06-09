@@ -7,6 +7,9 @@ import {
 import { Download, Minus, Plus, ArrowDownToLine, ArrowUpFromLine } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { client } from '../../../shared/api/client';
+import type { Product } from '../types';
+import type { Entry } from '../../stock/entries/types';
+import type { Removal } from '../../stock/removals/types';
 import Button from '../../../shared/components/ui/Button';
 import Modal, { type ModalHandle } from '../../../shared/components/ui/Modal';
 import Pagination from '../../../shared/components/ui/Pagination';
@@ -24,7 +27,7 @@ type Movement = {
 type StockPoint = { updateDate: string; quantity: number };
 
 export default function StockSheetPage() {
-  const { product } = (useLocation().state ?? {}) as { product: any };
+  const { product } = (useLocation().state ?? {}) as { product: Product };
   const navigate    = useNavigate();
   const { refreshLowStock } = useStockAlert();
 
@@ -43,18 +46,18 @@ export default function StockSheetPage() {
       client.get(`entries/product/${product.id}/`),
       client.get(`removals/product/${product.id}/`),
     ]).then(([entries, removals]) => {
-      const entryPoints: Movement[] = entries.data.map((e: any) => ({
+      const entryPoints: Movement[] = (entries.data as Entry[]).map((e) => ({
         date:     e.date_register,
         quantity: e.quantity,
         type:     'entry',
         label:    e.supplier ?? '—',
       }));
 
-      const removalPoints: Movement[] = removals.data.flatMap((r: any) => {
+      const removalPoints: Movement[] = (removals.data as Removal[]).flatMap((r) => {
         const date = r.date_register ?? r.invoice?.date_created ?? '';
         const items = r.invoice?.products ?? [];
         if (items.length) {
-          return items.map((p: any) => ({
+          return items.map((p) => ({
             date,
             quantity:    p.quantity,
             type:        'removal',
@@ -86,6 +89,7 @@ export default function StockSheetPage() {
     });
   };
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { loadMovements(); }, [product]);
 
   const handleAddEntry = async (e: React.FormEvent) => {
@@ -105,8 +109,9 @@ export default function StockSheetPage() {
       addEntryRef.current?.close();
       loadMovements();
       refreshLowStock();
-    } catch (err: any) {
-      toast.error(err?.response?.data?.error ?? "Erreur lors de l'ajout");
+    } catch (err) {
+      const e = err as { response?: { data?: { error?: string } } };
+      toast.error(e?.response?.data?.error ?? "Erreur lors de l'ajout");
     } finally {
       setEntrySaving(false);
     }

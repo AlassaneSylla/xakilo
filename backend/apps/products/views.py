@@ -1,12 +1,9 @@
 from django.db.models import F, OuterRef, Subquery
 from django.shortcuts import get_object_or_404
 from rest_framework.decorators import api_view, permission_classes
-from rest_framework.permissions import IsAuthenticated, IsAdminUser
-from rest_framework.decorators import api_view
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework import status
-from django.db import models
-from yaml import serialize
 
 from .models import Product
 from apps.stock.models.entry import Entry

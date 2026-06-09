@@ -1,11 +1,11 @@
 import { useEffect, useState } from 'react';
-import { fetchReport, type ReportPeriod, type ReportSection } from '../api/reportsApi';
+import { fetchReport, type ReportPeriod, type ReportSection, type ReportData } from '../api/reportsApi';
 
 export function useReports(
   period: ReportPeriod,
   options?: { date_from?: string; date_to?: string; section?: ReportSection },
 ) {
-  const [data,    setData]    = useState<any>(null);
+  const [data,    setData]    = useState<ReportData | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
