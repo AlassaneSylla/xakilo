@@ -48,8 +48,8 @@ export default function Pagination({ currentPage, total, onChange }: Props) {
               className={clsx(
                 'btn btn-xs w-8 h-8 font-semibold transition-all duration-150 border-0',
                 page === currentPage
-                  ? 'bg-[var(--black)] text-[var(--brokenWhite)] shadow-md scale-105'
-                  : 'btn-ghost text-gray-500 hover:text-[var(--black)] hover:bg-base-300'
+                  ? 'bg-(--black) text-(--brokenWhite) shadow-md scale-105'
+                  : 'btn-ghost text-gray-500 hover:text-(--black) hover:bg-base-300'
               )}
             >
               {page}

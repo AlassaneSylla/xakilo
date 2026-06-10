@@ -171,9 +171,9 @@ export default function RemovalFormPage() {
               </div>
             ))}
             <button type="button"
-              className="btn btn-xs hover:text-[color:var(--brokenWhite)] hover:bg-[color:var(--black)]"
+              className="btn btn-xs hover:text-(--brokenWhite) hover:bg-(--black)"
               onClick={addItem}>
-              <Plus className="text-[var(--primary)]" /> Ajouter produit
+              <Plus className="text-(--primary)" /> Ajouter produit
             </button>
           </div>
 
@@ -268,7 +268,7 @@ export default function RemovalFormPage() {
                 Justificatif de perte (obligatoire)
               </p>
               <textarea
-                className="textarea textarea-bordered w-full min-h-[90px]"
+                className="textarea textarea-bordered w-full min-h-22.5"
                 placeholder="Décrivez le motif de la perte (produit gâté, cassé, vol, périmé…)"
                 required={isPerte}
                 value={form.justification ?? ''}
@@ -299,7 +299,7 @@ export default function RemovalFormPage() {
 
           <Button variant="primary" size="md" type="submit" disabled={loading}>
             {loading
-              ? <span className="loading loading-spinner loading-sm text-[var(--primary)]" />
+              ? <span className="loading loading-spinner loading-sm text-(--primary)" />
               : 'Enregistrer'}
           </Button>
         </form>

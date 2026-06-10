@@ -34,7 +34,7 @@ export default function SalesInvoicesPage() {
 
   if (loading) return (
     <div className="flex items-center justify-center min-h-[50vh]">
-      <span className="loading loading-spinner loading-lg text-[var(--primary)]" />
+      <span className="loading loading-spinner loading-lg text-(--primary)" />
     </div>
   );
 
@@ -66,7 +66,7 @@ export default function SalesInvoicesPage() {
       <div className="overflow-x-auto">
         <table className="table w-full">
           <thead>
-            <tr className="bg-base-200 text-[var(--black)]">
+            <tr className="bg-base-200 text-(--black)">
               <th>Référence</th><th>Date</th><th>Client</th>
               <th>Montant total</th><th>Statut</th><th>Actions</th>
             </tr>

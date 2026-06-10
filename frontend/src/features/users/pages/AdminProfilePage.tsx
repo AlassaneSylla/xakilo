@@ -61,17 +61,17 @@ export default function AdminProfilePage() {
         <div className="lg:col-span-2 space-y-5">
 
           {/* Badge Super Admin */}
-          <div className="card bg-[var(--black)] text-[var(--brokenWhite)] shadow">
+          <div className="card bg-(--black) text-(--brokenWhite) shadow">
             <div className="card-body py-5">
               <div className="flex items-center gap-4">
                 <div className="p-3 rounded-full bg-white/10">
-                  <Shield size={30} className="text-[var(--secondary)]" />
+                  <Shield size={30} className="text-(--secondary)" />
                 </div>
                 <div>
                   <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-0.5">
                     Niveau d'accès
                   </p>
-                  <p className="text-xl font-bold text-[var(--secondary)]">Super Administrateur</p>
+                  <p className="text-xl font-bold text-(--secondary)">Super Administrateur</p>
                   <p className="text-xs text-gray-400 mt-0.5">Accès complet à la plateforme Xakilo</p>
                 </div>
               </div>
@@ -107,7 +107,7 @@ export default function AdminProfilePage() {
                 </div>
                 <div>
                   <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide">Type</p>
-                  <span className="badge badge-sm bg-[var(--black)] text-[var(--secondary)] border-0 mt-1">
+                  <span className="badge badge-sm bg-(--black) text-(--secondary) border-0 mt-1">
                     Super Admin
                   </span>
                 </div>

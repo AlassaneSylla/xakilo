@@ -123,7 +123,7 @@ export default function UsersPage() {
 
   if (loading) return (
     <div className="flex items-center justify-center min-h-[50vh]">
-      <span className="loading loading-spinner loading-lg text-[var(--primary)]" />
+      <span className="loading loading-spinner loading-lg text-(--primary)" />
     </div>
   );
 
@@ -150,7 +150,7 @@ export default function UsersPage() {
       <div className="overflow-x-auto">
         <table className="table">
           <thead>
-            <tr className="bg-base-200 text-[var(--black)]">
+            <tr className="bg-base-200 text-(--black)">
               <th>Prénom</th><th>Nom</th><th>Email</th>
               <th>Rôle</th><th>Dernière connexion</th><th>Inscription</th><th>Actions</th>
             </tr>

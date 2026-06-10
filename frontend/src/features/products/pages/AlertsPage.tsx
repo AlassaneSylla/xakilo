@@ -15,7 +15,7 @@ export default function AlertsPage() {
 
   if (loading) return (
     <div className="flex items-center justify-center min-h-[50vh]">
-      <span className="loading loading-spinner loading-lg text-[var(--primary)]" />
+      <span className="loading loading-spinner loading-lg text-(--primary)" />
     </div>
   );
 
@@ -50,7 +50,7 @@ export default function AlertsPage() {
             </div>
             <div className="flex flex-col text-xs text-right w-[10%]">
               <span className="opacity-60">Ajouté par</span>
-              <span className="text-[var(--primary)] font-semibold">{p.created_by_username}</span>
+              <span className="text-(--primary) font-semibold">{p.created_by_username}</span>
             </div>
           </li>
         )) : (
