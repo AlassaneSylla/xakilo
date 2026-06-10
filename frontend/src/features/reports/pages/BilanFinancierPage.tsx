@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import toast from 'react-hot-toast';
 import { TrendingUp, TrendingDown, Banknote, AlertTriangle, ShoppingCart, Scale, Receipt, ChevronLeft, ChevronRight, Clock } from 'lucide-react';
 
 import { useReports } from '../hooks/useReports';
@@ -80,8 +81,11 @@ export default function BilanFinancierPage() {
     setPaySubmitting(true);
     try {
       await addPayment(paying.id, { amount: Number(payAmount), mode: payMode });
+      toast.success('Paiement enregistré');
       (document.getElementById('pay-modal') as HTMLDialogElement)?.close();
       fetchUnpaid();
+    } catch {
+      toast.error('Erreur lors de l\'enregistrement du paiement');
     } finally {
       setPaySubmitting(false);
     }

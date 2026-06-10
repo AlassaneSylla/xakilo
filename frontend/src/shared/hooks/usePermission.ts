@@ -21,7 +21,7 @@ export function usePermission() {
     canManageBoutiques: user?.is_superuser ?? false,
     canDelete:          role === 'OWNER' || role === 'MANAGER',
     canCancelRemoval:   role === 'OWNER' || role === 'MANAGER',
-    canRecordPayment:   true,
+    canRecordPayment:   role === 'OWNER' || role === 'MANAGER',
     canFilterByDate:    role === 'OWNER',
     canExportReport:    role === 'OWNER',
   };

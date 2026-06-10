@@ -151,8 +151,8 @@ export default function UsersPage() {
         <table className="table">
           <thead>
             <tr className="bg-base-200 text-[var(--black)]">
-              <th>🏷️ Prénom</th><th>👤 Nom</th><th>✉️ Email</th>
-              <th>🛡️ Rôle</th><th>⏰ Dernière connexion</th><th>📅 Inscription</th><th>⚙️ Actions</th>
+              <th>Prénom</th><th>Nom</th><th>Email</th>
+              <th>Rôle</th><th>Dernière connexion</th><th>Inscription</th><th>Actions</th>
             </tr>
           </thead>
           <tbody className="transition-all duration-300">

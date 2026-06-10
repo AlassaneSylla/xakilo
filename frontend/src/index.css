@@ -32,39 +32,35 @@ h3 {
     color: var(--primary);
 }
 
-/* pour ne pas imprimer les bouton de la facture */
 @media print {
-  .no-print {
-    display: none !important;
-  }
-}
+  .no-print { display: none !important; }
 
+  @page { size: A5 portrait; margin: 0; }
 
-/* imprimer le contenu */
-@media print {
-  body * {
-    visibility: hidden !important;
+  body * { visibility: hidden !important; }
+
+  /* Lever les contraintes DaisyUI qui coupent la facture */
+  .modal, .modal-box {
+    max-height: none !important;
+    overflow: visible !important;
   }
+
   #invoice-print-area,
   #invoice-print-area * {
     visibility: visible !important;
   }
+
   #invoice-print-area {
-    position: absolute;
+    position: fixed;
     top: 0;
     left: 0;
     width: 100%;
-  }
-
-  /* format a5 paysage */
-  @page {
-    size: A5 landscape; 
-    margin: 8mm;
-  }
-  #invoice-print-area {
-    width: 190mm;    
-    padding: 5mm;
-    margin: 0 auto;
+    height: 100%;
+    background: white;
+    display: flex;
+    flex-direction: column;
+    padding: 14mm 16mm;
+    box-sizing: border-box;
   }
 }
 

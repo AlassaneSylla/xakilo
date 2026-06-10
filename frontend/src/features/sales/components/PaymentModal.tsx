@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Banknote, Smartphone, CreditCard, X } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { client } from '../../../shared/api/client';
@@ -24,6 +24,13 @@ export default function PaymentModal({ removal, onClose, onSuccess }: Props) {
   const [mode,    setMode]    = useState<PaymentMode>('especes');
   const [note,    setNote]    = useState('');
   const [saving,  setSaving]  = useState(false);
+
+  useEffect(() => {
+    if (!removal) return;
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [removal, onClose]);
 
   if (!removal) return null;
 

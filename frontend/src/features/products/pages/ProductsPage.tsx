@@ -65,6 +65,10 @@ export default function ProductsPage() {
 
   const handleAdd = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (addForm.unit_price <= 0 || addForm.purchase_price <= 0) {
+      toast.error("Le prix unitaire et le prix d'achat doivent être supérieurs à 0.");
+      return;
+    }
     setSaving(true);
     try {
       await create(addForm as ProductPayload);
@@ -156,8 +160,8 @@ export default function ProductsPage() {
         <table className="table">
           <thead>
             <tr className="bg-base-200">
-              <th>🏷️ Produit</th><th>📂 Catégorie</th><th>🔢 Référence</th>
-              <th>📦 Stock</th><th>💰 Prix unitaire</th><th>⚙️ Actions</th>
+              <th>Produit</th><th>Catégorie</th><th>Référence</th>
+              <th>Stock</th><th>Prix unitaire</th><th>Actions</th>
             </tr>
           </thead>
           <tbody className="transition-all duration-300">
@@ -177,12 +181,6 @@ export default function ProductsPage() {
                     }}>
                     <SquarePen size={14} />
                   </IconButton>
-                  <Modal ref={editModalRef} title="Modifier le produit">
-                    <Form fields={EDIT_FIELDS} values={editForm} onChange={(e) => {
-                      const { name, value, type } = e.target as HTMLInputElement;
-                      setEditForm((p) => ({ ...p, [name]: type === 'number' ? Number(value) : value }));
-                    }} onSubmit={handleEdit} submitLabel="Mettre à jour" loading={saving} />
-                  </Modal>
                   <IconButton tooltip="Supprimer" color="danger" onClick={() => handleDelete(row.id)}>
                     <Trash size={14} />
                   </IconButton>
@@ -201,6 +199,13 @@ export default function ProductsPage() {
       </div>
 
       <Pagination currentPage={currentPage} total={total} onChange={setCurrentPage} />
+
+      <Modal ref={editModalRef} title="Modifier le produit">
+        <Form fields={EDIT_FIELDS} values={editForm} onChange={(e) => {
+          const { name, value, type } = e.target as HTMLInputElement;
+          setEditForm((p) => ({ ...p, [name]: type === 'number' ? Number(value) : value }));
+        }} onSubmit={handleEdit} submitLabel="Mettre à jour" loading={saving} />
+      </Modal>
     </div>
   );
 }

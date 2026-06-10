@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
+import toast from 'react-hot-toast';
 import { client } from '../shared/api/client';
 import { fetchMe, blacklistToken } from '../features/auth/api/authApi';
 import type { AuthUser } from '../features/auth/types';
@@ -25,11 +26,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       fetchMe()
         .then(setUser)
         .catch(() => {
-          // Token invalide/expiré — on nettoie
           localStorage.removeItem('accessToken');
           localStorage.removeItem('refreshToken');
           delete client.defaults.headers.common['Authorization'];
           setIsAuthenticated(false);
+          toast.error('Session expirée. Veuillez vous reconnecter.');
         })
         .finally(() => setLoading(false));
     } else {

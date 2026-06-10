@@ -52,7 +52,9 @@ export default function RemovalFormPage() {
           items: [{ product: prefill.prefillProductId!, quantity: 1 }],
         }));
       }
-    }).catch(() => {});
+    }).catch(() => {
+      toast.error('Impossible de charger la liste des produits');
+    });
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 

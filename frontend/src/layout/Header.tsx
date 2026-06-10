@@ -26,7 +26,7 @@ export default function Header() {
   const handleLogout = () => {
     setIsLoggingOut(true);
     setTimeout(async () => {
-      await logout();
+      try { await logout(); } catch { /* ignore */ }
       navigate(PATHS.LOGIN);
     }, 1500);
   };
@@ -114,6 +114,12 @@ export default function Header() {
             </li>
             {user?.email && (
               <li className="text-xs text-center text-gray-400 mb-1 px-2 truncate">{user.email}</li>
+            )}
+            {!user?.is_superuser && (
+              <>
+                <div className="divider my-1" />
+                <li><Link to={PATHS.PROFILE}>Profil</Link></li>
+              </>
             )}
             <div className="divider my-1" />
             <li>

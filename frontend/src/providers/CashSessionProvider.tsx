@@ -100,7 +100,10 @@ export function CashSessionProvider({ children }: { children: React.ReactNode })
 
       {/* ── Modale d'ouverture de session à la volée ─────────────── */}
       {modalVisible && (
-        <div className="fixed inset-0 z-9999 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+        <div
+          className="fixed inset-0 z-9999 flex items-center justify-center bg-black/50 backdrop-blur-sm"
+          onClick={(e) => { if (e.target === e.currentTarget) handleCancel(); }}
+        >
           <div className="bg-base-100 rounded-2xl shadow-2xl w-full max-w-sm mx-4 p-6">
             <h3 className="text-base font-bold mb-1">Session de caisse requise</h3>
             <p className="text-xs text-gray-400 mb-5">

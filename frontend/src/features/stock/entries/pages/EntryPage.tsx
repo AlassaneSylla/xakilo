@@ -36,7 +36,11 @@ export default function EntryPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const PER_PAGE = 5;
 
-  useEffect(() => { getProducts().then(setProducts).catch(() => {}); }, []);
+  useEffect(() => {
+    getProducts().then(setProducts).catch(() => {
+      toast.error('Impossible de charger la liste des produits');
+    });
+  }, []);
 
   const productOptions = products.map((p) => ({ value: p.id, label: p.product_name }));
 
@@ -81,6 +85,10 @@ export default function EntryPage() {
 
   const handleAdd = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (Number(addForm.quantity) <= 0) {
+      toast.error('La quantité doit être supérieure à 0.');
+      return;
+    }
     const ok = await ensureSession();
     if (!ok) return;
     setSaving(true);
@@ -96,6 +104,10 @@ export default function EntryPage() {
   const handleEdit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (editId === null) return;
+    if (Number(editForm.quantity) <= 0) {
+      toast.error('La quantité doit être supérieure à 0.');
+      return;
+    }
     setSaving(true);
     try {
       await update(editId, { quantity: Number(editForm.quantity), supplier: String(editForm.supplier) });
@@ -161,8 +173,8 @@ export default function EntryPage() {
         <table className="table">
           <thead>
             <tr className="bg-base-200">
-              <th>🏷️ Produit</th><th>📂 Catégorie</th><th>🔢 Référence</th>
-              <th>📅 Date</th><th>📦 Quantité</th><th>🚚 Fournisseur</th><th>⚙️ Actions</th>
+              <th>Produit</th><th>Catégorie</th><th>Référence</th>
+              <th>Date</th><th>Quantité</th><th>Fournisseur</th><th>Actions</th>
             </tr>
           </thead>
           <tbody>
@@ -180,11 +192,6 @@ export default function EntryPage() {
                     setEditForm({ product: row.product, quantity: row.quantity, supplier: row.supplier, category: row.category });
                     editModalRef.current?.open();
                   }}><SquarePen size={14} /></IconButton>
-                  <Modal ref={editModalRef} title="Modifier l'entrée">
-                    <Form fields={EDIT_FIELDS} values={editForm}
-                      onChange={(e) => handleChange(e, setEditForm)}
-                      onSubmit={handleEdit} submitLabel="Mettre à jour" loading={saving} />
-                  </Modal>
                   <IconButton tooltip="Supprimer" color="danger" onClick={() => handleDelete(row.id)}>
                     <Trash size={14} />
                   </IconButton>
@@ -199,6 +206,12 @@ export default function EntryPage() {
       </div>
 
       <Pagination currentPage={currentPage} total={total} onChange={setCurrentPage} />
+
+      <Modal ref={editModalRef} title="Modifier l'entrée">
+        <Form fields={EDIT_FIELDS} values={editForm}
+          onChange={(e) => handleChange(e, setEditForm)}
+          onSubmit={handleEdit} submitLabel="Mettre à jour" loading={saving} />
+      </Modal>
     </div>
   );
 }

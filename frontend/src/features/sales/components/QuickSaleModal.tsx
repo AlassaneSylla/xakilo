@@ -30,7 +30,9 @@ export default function QuickSaleModal({ onSuccess }: Props) {
   const [saving, setSaving]           = useState(false);
 
   useEffect(() => {
-    client.get<Product[]>('products/').then(({ data }) => setProducts(data)).catch(() => {});
+    client.get<Product[]>('products/').then(({ data }) => setProducts(data)).catch(() => {
+      toast.error('Impossible de charger la liste des produits');
+    });
   }, []);
 
   const addLine = () => {
