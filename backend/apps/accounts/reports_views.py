@@ -10,6 +10,14 @@ from django.db.models.functions import ExtractMonth, ExtractWeek, Coalesce
 
 from django.core.cache import cache
 
+from apps.stock.models.removal import Removal, RemovalItem
+from apps.stock.models.entry   import Entry
+from apps.stock.models.expense import Expense
+from apps.stock.models.payment import Payment
+from apps.products.models      import Product
+
+REPORTS_CACHE_TTL = 5 * 60  # 5 minutes
+
 
 def _cache_get(key):
     try:
@@ -23,14 +31,6 @@ def _cache_set(key, value, timeout):
         cache.set(key, value, timeout=timeout)
     except Exception:
         pass
-
-from apps.stock.models.removal import Removal, RemovalItem
-from apps.stock.models.entry   import Entry
-from apps.stock.models.expense import Expense
-from apps.stock.models.payment import Payment
-from apps.products.models      import Product
-
-REPORTS_CACHE_TTL = 5 * 60  # 5 minutes
 
 
 # ── Helpers ─────────────────────────────────────────────────────────────────────
