@@ -1,8 +1,27 @@
 import { client } from '../../../shared/api/client';
 import type { Product, ProductPayload } from '../types';
 
+export type PaginatedProducts = {
+  count: number;
+  next: string | null;
+  previous: string | null;
+  results: Product[];
+};
+
 export const getProducts = async (): Promise<Product[]> => {
   const { data } = await client.get<Product[]>('products/');
+  return data;
+};
+
+export const getProductsPaginated = async (
+  page: number,
+  search = '',
+  lowStockOnly = false,
+): Promise<PaginatedProducts> => {
+  const params: Record<string, string | number> = { page };
+  if (search) params.search = search;
+  if (lowStockOnly) params.low_stock_only = 'true';
+  const { data } = await client.get<PaginatedProducts>('products/', { params });
   return data;
 };
 

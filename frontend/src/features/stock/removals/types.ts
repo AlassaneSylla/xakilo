@@ -16,6 +16,13 @@ export type RemovalItem = {
   quantity: number;
 };
 
+export type RemovalItemDetail = {
+  product_name: string;
+  quantity: number;
+  unit_price: number;
+  total_price: number;
+};
+
 export type InvoiceData = {
   invoice_number: string;
   total_amount: number;
@@ -48,9 +55,14 @@ export type Removal = {
   invoice_status: InvoiceStatus;
   created_by_username: string;
   invoice: InvoiceData | null;
+  items: RemovalItemDetail[];
   payments: Payment[];
   amount_paid: number;
   balance_due: number;
+  justification: string | null;
+  cancelled_at: string | null;
+  cancelled_by_username: string | null;
+  cancellation_reason: string | null;
 };
 
 export type RemovalPayload = {

@@ -1,12 +1,20 @@
+from django.db.models import Q
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
 from rest_framework.decorators import api_view, permission_classes
+from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework import status
 from apps.stock.models.entry import Entry
 from apps.stock.serializers.entry_serializer import EntrySerializer
 from apps.stock.services.entry_service import adjust_product_stock_on_entry_delete, adjust_product_stock_on_entry_save
+
+
+class _Pagination(PageNumberPagination):
+    page_size = 20
+    page_size_query_param = 'page_size'
+    max_page_size = 100
 
 
 def _require_session(user):
@@ -35,9 +43,17 @@ def _entry_qs(user):
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def get_entries(request):
-    entries = _entry_qs(request.user).select_related('product').order_by('-date_register')
-    serializer = EntrySerializer(entries, many=True)
-    return Response(serializer.data, status=status.HTTP_200_OK)
+    qs = _entry_qs(request.user).select_related('product').order_by('-date_register')
+    search = request.query_params.get('search', '').strip()
+    date   = request.query_params.get('date', '').strip()
+    if search:
+        qs = qs.filter(Q(product__product_name__icontains=search) | Q(supplier__icontains=search))
+    if date:
+        qs = qs.filter(date_register__date=date)
+    paginator = _Pagination()
+    page = paginator.paginate_queryset(qs, request)
+    serializer = EntrySerializer(page, many=True)
+    return paginator.get_paginated_response(serializer.data)
 
 
 @api_view(['GET'])

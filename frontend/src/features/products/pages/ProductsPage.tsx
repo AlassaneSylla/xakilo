@@ -1,9 +1,9 @@
-import { useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Search, Plus, SquarePen, Trash, PackageX } from 'lucide-react';
 import toast from 'react-hot-toast';
 
-import { useProducts } from '../hooks/useProducts';
+import { getProductsPaginated, postProduct, updateProduct, deleteProduct, getLowStockProducts } from '../api/productApi';
 import Modal, { type ModalHandle } from '../../../shared/components/ui/Modal';
 import Button from '../../../shared/components/ui/Button';
 import IconButton from '../../../shared/components/ui/IconButton';
@@ -35,33 +35,67 @@ const EDIT_FIELDS = [
 ];
 
 const EMPTY_ADD = { product_name: '', category: '', unit_price: 0, purchase_price: 0, alert: 0 };
+const PER_PAGE = 20;
 
 export default function ProductsPage() {
-  const { products, loading, create, update, remove } = useProducts();
   const addModalRef  = useRef<ModalHandle>(null);
   const editModalRef = useRef<ModalHandle>(null);
 
-  const [addForm,     setAddForm]     = useState({ ...EMPTY_ADD });
-  const [editForm,    setEditForm]    = useState<Partial<Product>>({});
-  const [editId,      setEditId]      = useState<number | null>(null);
-  const [saving,      setSaving]      = useState(false);
-  const [search,       setSearch]       = useState('');
-  const [lowStockOnly, setLowStockOnly] = useState(false);
-  const [currentPage,  setCurrentPage]  = useState(1);
-  const PER_PAGE = 5;
+  const [products,        setProducts]        = useState<Product[]>([]);
+  const [count,           setCount]           = useState(0);
+  const [loading,         setLoading]         = useState(true);
+  const [lowStockCount,   setLowStockCount]   = useState(0);
 
-  const lowStockCount = products.filter((p) => p.stock <= p.alert).length;
+  const [search,          setSearch]          = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
+  const [lowStockOnly,    setLowStockOnly]    = useState(false);
+  const [currentPage,     setCurrentPage]     = useState(1);
 
-  const filtered = products.filter((p: Product) => {
-    const matchSearch   = !search || p.product_name.toLowerCase().includes(search.toLowerCase()) || p.category.toLowerCase().includes(search.toLowerCase());
-    const matchLowStock = !lowStockOnly || p.stock <= p.alert;
-    return matchSearch && matchLowStock;
-  });
+  const [addForm,  setAddForm]  = useState({ ...EMPTY_ADD });
+  const [editForm, setEditForm] = useState<Partial<Product>>({});
+  const [editId,   setEditId]   = useState<number | null>(null);
+  const [saving,   setSaving]   = useState(false);
 
-  const total        = Math.ceil(filtered.length / PER_PAGE);
-  const currentItems = filtered.slice((currentPage - 1) * PER_PAGE, currentPage * PER_PAGE);
+  const fetchProducts = useCallback(async (page: number, q: string, lowStock: boolean) => {
+    setLoading(true);
+    try {
+      const data = await getProductsPaginated(page, q, lowStock);
+      setProducts(data.results);
+      setCount(data.count);
+    } catch {
+      toast.error('Erreur lors du chargement des produits');
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
+  useEffect(() => {
+    const timer = setTimeout(() => setDebouncedSearch(search), 300);
+    return () => clearTimeout(timer);
+  }, [search]);
+
+  useEffect(() => {
+    fetchProducts(currentPage, debouncedSearch, lowStockOnly);
+  }, [currentPage, debouncedSearch, lowStockOnly, fetchProducts]);
+
+  useEffect(() => {
+    getLowStockProducts()
+      .then((r) => setLowStockCount(r.count))
+      .catch(() => {});
+  }, []);
+
+  const total = Math.ceil(count / PER_PAGE);
   const CONFIRM_ID = 'delete-confirm';
+
+  const handleSearchChange = (value: string) => {
+    setSearch(value);
+    setCurrentPage(1);
+  };
+
+  const handleLowStockToggle = () => {
+    setLowStockOnly((v) => !v);
+    setCurrentPage(1);
+  };
 
   const handleAdd = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -71,8 +105,9 @@ export default function ProductsPage() {
     }
     setSaving(true);
     try {
-      await create(addForm as ProductPayload);
+      await postProduct(addForm as ProductPayload);
       toast.success('Produit ajouté !');
+      fetchProducts(currentPage, debouncedSearch, lowStockOnly);
       setTimeout(() => addModalRef.current?.close(), 800);
     } catch { toast.error("Erreur lors de l'ajout"); }
     finally { setSaving(false); }
@@ -83,8 +118,9 @@ export default function ProductsPage() {
     if (editId === null) return;
     setSaving(true);
     try {
-      await update(editId, editForm);
+      await updateProduct(editId, editForm);
       toast.success('Produit mis à jour !');
+      fetchProducts(currentPage, debouncedSearch, lowStockOnly);
       setTimeout(() => editModalRef.current?.close(), 800);
     } catch { toast.error('Échec de la mise à jour'); }
     finally { setSaving(false); }
@@ -97,7 +133,12 @@ export default function ProductsPage() {
           <Trash />
           <p className="text-sm font-medium">Supprimer ce produit ?</p>
           <button className="btn btn-xs btn-error" onClick={() => {
-            remove(id).then(() => toast.success('Produit supprimé !')).catch(() => toast.error('Erreur'));
+            deleteProduct(id)
+              .then(() => {
+                toast.success('Produit supprimé !');
+                fetchProducts(currentPage, debouncedSearch, lowStockOnly);
+              })
+              .catch(() => toast.error('Erreur'));
             toast.dismiss(CONFIRM_ID);
           }}>Oui</button>
         </div>
@@ -108,7 +149,7 @@ export default function ProductsPage() {
     ), { id: CONFIRM_ID });
   };
 
-  if (loading) return (
+  if (loading && products.length === 0) return (
     <div className="flex items-center justify-center min-h-[50vh]">
       <span className="loading loading-spinner loading-lg" />
     </div>
@@ -122,14 +163,14 @@ export default function ProductsPage() {
         <label className="input">
           <Search size={16} />
           <input type="search" placeholder="Rechercher par nom ou catégorie"
-            value={search} onChange={(e) => { setSearch(e.target.value); setCurrentPage(1); }} />
+            value={search} onChange={(e) => handleSearchChange(e.target.value)} />
         </label>
         <Button variant="primary" size="md" onClick={() => { setAddForm({ ...EMPTY_ADD }); addModalRef.current?.open(); }}>
           <Plus /> Ajouter produit
         </Button>
         <button
           type="button"
-          onClick={() => { setLowStockOnly((v) => !v); setCurrentPage(1); }}
+          onClick={handleLowStockToggle}
           className={`btn btn-md font-semibold flex items-center gap-1.5 transition-all duration-200 ${
             lowStockOnly
               ? 'bg-red-500 text-white border-red-500 hover:bg-red-600'
@@ -153,7 +194,7 @@ export default function ProductsPage() {
       </div>
 
       {search && (
-        <p className="text-xs text-gray-400 mb-3">{filtered.length} résultat(s)</p>
+        <p className="text-xs text-gray-400 mb-3">{count} résultat(s)</p>
       )}
 
       <div className="overflow-x-auto">
@@ -165,7 +206,7 @@ export default function ProductsPage() {
             </tr>
           </thead>
           <tbody className="transition-all duration-300">
-            {currentItems.map((row) => (
+            {products.map((row) => (
               <tr key={row.id} className="hover:bg-base-200">
                 <td className="capitalize">{row.product_name}</td>
                 <td className="capitalize">{row.category}</td>
@@ -191,7 +232,7 @@ export default function ProductsPage() {
                 </td>
               </tr>
             ))}
-            {currentItems.length === 0 && (
+            {products.length === 0 && !loading && (
               <tr><td colSpan={6} className="text-center text-gray-400 py-8">Aucun produit trouvé.</td></tr>
             )}
           </tbody>

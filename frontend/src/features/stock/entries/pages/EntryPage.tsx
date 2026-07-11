@@ -13,15 +13,21 @@ import Form from '../../../../shared/components/ui/Form';
 import { useStockAlert } from '../../../../providers/StockAlertProvider';
 import { useCashSession } from '../../../../providers/CashSessionProvider';
 import type { Product } from '../../../products/types';
-import type { Entry } from '../types';
 
-function isSameDay(dateStr: string | null | undefined, filter: string): boolean {
-  if (!filter || !dateStr) return false;
-  return new Date(dateStr).toLocaleDateString('fr-CA') === filter;
-}
+const PAGE_SIZE = 20;
 
 export default function EntryPage() {
-  const { entries, loading, create, update, remove } = useEntries();
+  const [search,          setSearch]          = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
+  const [dateFilter,      setDateFilter]      = useState('');
+  const [currentPage,     setCurrentPage]     = useState(1);
+
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedSearch(search), 300);
+    return () => clearTimeout(t);
+  }, [search]);
+
+  const { entries, count, loading, create, update, remove } = useEntries(currentPage, debouncedSearch, dateFilter);
   const [products, setProducts] = useState<Product[]>([]);
   const addModalRef  = useRef<ModalHandle>(null);
   const editModalRef = useRef<ModalHandle>(null);
@@ -31,10 +37,6 @@ export default function EntryPage() {
   const [saving,      setSaving]      = useState(false);
   const { refreshLowStock } = useStockAlert();
   const { ensureSession } = useCashSession();
-  const [search,      setSearch]      = useState('');
-  const [dateFilter,  setDateFilter]  = useState('');
-  const [currentPage, setCurrentPage] = useState(1);
-  const PER_PAGE = 5;
 
   useEffect(() => {
     getProducts().then(setProducts).catch(() => {
@@ -58,17 +60,7 @@ export default function EntryPage() {
     { name: 'supplier', label: 'Fournisseur', required: true },
   ];
 
-  const filtered = entries.filter((e: Entry) => {
-    const q = search.toLowerCase();
-    const matchSearch = !search
-      || (e.product_name ?? '').toLowerCase().includes(q)
-      || (e.supplier ?? '').toLowerCase().includes(q);
-    const matchDate = !dateFilter || isSameDay(e.date_register, dateFilter);
-    return matchSearch && matchDate;
-  });
-
-  const total        = Math.ceil(filtered.length / PER_PAGE);
-  const currentItems = filtered.slice((currentPage - 1) * PER_PAGE, currentPage * PER_PAGE);
+  const total = Math.ceil(count / PAGE_SIZE);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>, setter: React.Dispatch<React.SetStateAction<Record<string, string | number>>>) => {
     const { name, value } = e.target;
@@ -166,10 +158,10 @@ export default function EntryPage() {
       </div>
 
       {(search || dateFilter) && (
-        <p className="text-xs text-gray-400 mb-3">{filtered.length} résultat(s)</p>
+        <p className="text-xs text-gray-400 mb-3">{count} résultat(s)</p>
       )}
 
-      <div className="overflow-x-auto">
+      <div>
         <table className="table">
           <thead>
             <tr className="bg-base-200">
@@ -178,7 +170,7 @@ export default function EntryPage() {
             </tr>
           </thead>
           <tbody>
-            {currentItems.map((row) => (
+            {entries.map((row) => (
               <tr key={row.id} className="hover:bg-base-200">
                 <th className="font-semibold">{row.product_name}</th>
                 <td>{row.category}</td>
@@ -198,7 +190,7 @@ export default function EntryPage() {
                 </td>
               </tr>
             ))}
-            {currentItems.length === 0 && (
+            {entries.length === 0 && (
               <tr><td colSpan={7} className="text-center text-gray-400 py-8">Aucune entrée trouvée.</td></tr>
             )}
           </tbody>

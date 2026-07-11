@@ -1,5 +1,20 @@
-import { Store, Users, CheckCircle, XCircle, Building2 } from 'lucide-react';
+import { useState } from 'react';
+import { Store, Users, CheckCircle, XCircle, Building2, Phone, Eye, X } from 'lucide-react';
 import { useBoutiques } from '../../boutiques/hooks/useBoutiques';
+import { getBoutiqueUsers, type Boutique } from '../../boutiques/api/boutiquesApi';
+import type { User } from '../../users/types';
+
+const ROLE_LABEL: Record<string, string> = {
+  OWNER: 'Propriétaire',
+  MANAGER: 'Manager',
+  EMPLOYEE: 'Employé',
+};
+
+const ROLE_COLOR: Record<string, string> = {
+  OWNER: 'badge-warning',
+  MANAGER: 'badge-info',
+  EMPLOYEE: 'badge-ghost',
+};
 
 function StatCard({ icon, label, value, color }: {
   icon: React.ReactNode;
@@ -24,6 +39,18 @@ function StatCard({ icon, label, value, color }: {
 
 export default function AdminHomePage() {
   const { boutiques, loading } = useBoutiques();
+  const [usersModal, setUsersModal] = useState<{ boutique: Boutique; users: User[] } | null>(null);
+  const [loadingUsers, setLoadingUsers] = useState(false);
+
+  const openUsersModal = async (b: Boutique) => {
+    setLoadingUsers(true);
+    try {
+      const users = await getBoutiqueUsers(b.id);
+      setUsersModal({ boutique: b, users });
+    } finally {
+      setLoadingUsers(false);
+    }
+  };
 
   const totalBoutiques  = boutiques.length;
   const activeBoutiques = boutiques.filter((b) => b.is_active).length;
@@ -89,20 +116,34 @@ export default function AdminHomePage() {
                     <Store size={14} className="text-(--primary)" />
                     <span className="font-medium">{b.name}</span>
                   </div>
-                  {b.email && <p className="text-xs text-gray-400">{b.email}</p>}
                 </td>
                 <td>
                   {b.owner_name ? (
-                    <div>
+                    <div className="space-y-0.5">
                       <p className="text-sm font-medium">{b.owner_name}</p>
-                      {b.owner_phone && <p className="text-xs text-gray-400">{b.owner_phone}</p>}
+                      {b.owner_phone && (
+                        <div className="flex items-center gap-1 text-xs text-gray-400">
+                          <Phone size={11} /> {b.owner_phone}
+                        </div>
+                      )}
                     </div>
                   ) : (
                     <span className="text-xs text-gray-400 italic">—</span>
                   )}
                 </td>
                 <td>
-                  <span className="badge badge-ghost badge-sm">{b.user_count} / 5</span>
+                  <div className="flex items-center gap-2">
+                    <span className="badge badge-ghost badge-sm">{b.user_count} / 5</span>
+                    <button
+                      type="button"
+                      className="btn btn-ghost btn-xs btn-circle tooltip tooltip-left"
+                      data-tip="Voir les utilisateurs"
+                      onClick={() => openUsersModal(b)}
+                      disabled={loadingUsers}
+                    >
+                      <Eye size={13} />
+                    </button>
+                  </div>
                 </td>
                 <td>
                   <span className={`badge badge-sm ${b.is_active ? 'badge-success' : 'badge-error'}`}>
@@ -121,6 +162,54 @@ export default function AdminHomePage() {
           </tbody>
         </table>
       </div>
+
+      {/* Modal utilisateurs */}
+      {usersModal && (
+        <dialog className="modal modal-open">
+          <div className="modal-box max-w-lg">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="font-bold text-lg">
+                Utilisateurs — {usersModal.boutique.name}
+              </h3>
+              <button
+                type="button"
+                className="btn btn-ghost btn-xs btn-circle"
+                onClick={() => setUsersModal(null)}
+              >
+                <X size={14} />
+              </button>
+            </div>
+
+            {usersModal.users.length === 0 ? (
+              <p className="text-sm text-gray-400 italic text-center py-6">Aucun utilisateur dans cette boutique.</p>
+            ) : (
+              <div className="space-y-2">
+                {usersModal.users.map((u) => (
+                  <div key={u.id} className="flex items-center justify-between bg-base-200 rounded-lg px-4 py-2.5">
+                    <div>
+                      <p className="text-sm font-medium">{u.first_name} {u.last_name}</p>
+                      {u.phone && <p className="text-xs text-gray-400 flex items-center gap-1"><Phone size={10} /> {u.phone}</p>}
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className={`badge badge-sm ${ROLE_COLOR[u.role] ?? 'badge-ghost'}`}>
+                        {ROLE_LABEL[u.role] ?? u.role}
+                      </span>
+                      <span className={`badge badge-xs ${u.is_active ? 'badge-success' : 'badge-error'}`}>
+                        {u.is_active ? 'Actif' : 'Inactif'}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            <div className="modal-action">
+              <button type="button" className="btn btn-sm" onClick={() => setUsersModal(null)}>Fermer</button>
+            </div>
+          </div>
+          <div className="modal-backdrop" onClick={() => setUsersModal(null)} />
+        </dialog>
+      )}
     </div>
   );
 }

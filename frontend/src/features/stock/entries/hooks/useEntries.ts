@@ -1,34 +1,38 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { getEntries, postEntry, updateEntry, deleteEntry } from '../api/entriesApi';
 import type { Entry, EntryPayload } from '../types';
 
-export function useEntries() {
+export function useEntries(page: number, search: string, date: string) {
   const [entries, setEntries] = useState<Entry[]>([]);
+  const [count,   setCount]   = useState(0);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    getEntries()
-      .then(setEntries)
+  const fetchEntries = useCallback(() => {
+    setLoading(true);
+    getEntries(page, search, date)
+      .then(({ results, count: c }) => { setEntries(results); setCount(c); })
       .catch(() => {})
       .finally(() => setLoading(false));
-  }, []);
+  }, [page, search, date]);
+
+  useEffect(() => { fetchEntries(); }, [fetchEntries]);
 
   const create = async (payload: EntryPayload) => {
     const created = await postEntry(payload);
-    setEntries((prev) => [created, ...prev]);
+    fetchEntries();
     return created;
   };
 
   const update = async (id: number, payload: Partial<EntryPayload>) => {
     const updated = await updateEntry(id, payload);
-    setEntries((prev) => prev.map((e) => (e.id === id ? updated : e)));
+    fetchEntries();
     return updated;
   };
 
   const remove = async (id: number) => {
     await deleteEntry(id);
-    setEntries((prev) => prev.filter((e) => e.id !== id));
+    fetchEntries();
   };
 
-  return { entries, loading, create, update, remove };
+  return { entries, count, loading, create, update, remove };
 }

@@ -1,8 +1,9 @@
 from .base import *  # noqa: F403, F405
+from datetime import timedelta
 
 DEBUG = True
 
-ALLOWED_HOSTS = ["localhost", "127.0.0.1", "0.0.0.0"]
+ALLOWED_HOSTS = ["localhost", "127.0.0.1", "0.0.0.0", "backend"]
 
 # En dev on autorise le front Vite
 CORS_ALLOWED_ORIGINS = [
@@ -17,3 +18,7 @@ EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
 INSTALLED_APPS += ["debug_toolbar"]  # noqa: F405
 MIDDLEWARE    += ["debug_toolbar.middleware.DebugToolbarMiddleware"]  # noqa: F405
 INTERNAL_IPS   = ["127.0.0.1"]
+
+SIMPLE_JWT = {
+    "ACCESS_TOKEN_LIFETIME": timedelta(hours=2),
+}

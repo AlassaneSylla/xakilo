@@ -5,8 +5,8 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
     environment:
-      POSTGRES_DB:       ${DB_NAME}
-      POSTGRES_USER:     ${DB_USER}
+      POSTGRES_DB: ${DB_NAME}
+      POSTGRES_USER: ${DB_USER}
       POSTGRES_PASSWORD: ${DB_PASSWORD}
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME}"]
@@ -38,6 +38,7 @@ services:
       - .env
     environment:
       DJANGO_SETTINGS_MODULE: config.settings.dev
+      REDIS_HOST: redis
     depends_on:
       db:
         condition: service_healthy
@@ -64,6 +65,21 @@ services:
       - backend
     networks:
       - xakilo_net
+
+  locust:
+    image: locustio/locust
+    ports:
+      - "8089:8089"
+    volumes:
+      - ./loadtest:/mnt/locust
+    command: >
+      -f /mnt/locust/locustfile.py
+      --host http://backend:8000
+    depends_on:
+      - backend
+    networks:
+      - xakilo_net
+    profiles: ["loadtest"]
 
 networks:
   xakilo_net:

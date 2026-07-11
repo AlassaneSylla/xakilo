@@ -1,4 +1,5 @@
 from django.utils import timezone
+from django.db import IntegrityError
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
@@ -43,12 +44,15 @@ def open_session(request):
         return Response({'error': 'Une session est déjà ouverte pour cette boutique.'}, status=status.HTTP_400_BAD_REQUEST)
 
     opening_balance = int(request.data.get('opening_balance', 0))
-    session = CashSession.objects.create(
-        boutique_id=user.boutique_id,
-        opened_by=user,
-        opening_balance=opening_balance,
-        status='open',
-    )
+    try:
+        session = CashSession.objects.create(
+            boutique_id=user.boutique_id,
+            opened_by=user,
+            opening_balance=opening_balance,
+            status='open',
+        )
+    except IntegrityError:
+        return Response({'error': 'Une session est déjà ouverte pour cette boutique.'}, status=status.HTTP_400_BAD_REQUEST)
     serializer = CashSessionSummarySerializer(session)
     return Response(serializer.data, status=status.HTTP_201_CREATED)
 

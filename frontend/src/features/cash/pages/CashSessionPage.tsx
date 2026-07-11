@@ -1,11 +1,23 @@
 import { useEffect, useState } from 'react';
-import { Clock, LogOut, TrendingDown, TrendingUp, History } from 'lucide-react';
+import { Clock, LogOut, TrendingDown, TrendingUp, History, AlertTriangle } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useCashSession } from '../../../providers/CashSessionProvider';
 import { getSessionHistory } from '../api/sessionApi';
 import { usePermission } from '../../../shared/hooks/usePermission';
 import CloseSessionModal from '../components/CloseSessionModal';
 import type { CashSession } from '../types';
+
+function isStaleSession(startTime: string): boolean {
+  const today = new Date().toDateString();
+  return new Date(startTime).toDateString() !== today;
+}
+
+function fmtDateTime(iso: string) {
+  return new Date(iso).toLocaleString('fr-FR', {
+    day: '2-digit', month: 'short', year: 'numeric',
+    hour: '2-digit', minute: '2-digit',
+  });
+}
 
 function fmt(n: number | null | undefined) {
   return (n ?? 0).toLocaleString('fr-FR');
@@ -32,7 +44,7 @@ export default function CashSessionPage() {
       .finally(() => setHistLoading(false));
   }, [isOwner]);
 
-  const handleOpen = async (e: React.FormEvent) => {
+  const handleOpen = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setOpening(true);
     try {
@@ -49,11 +61,25 @@ export default function CashSessionPage() {
   if (loading) return <div className="flex justify-center py-24"><span className="loading loading-spinner loading-lg" /></div>;
 
   return (
-    <div className="max-w-2xl mx-auto space-y-8">
+    <div className="space-y-8">
       <div>
         <h1 className="text-2xl font-bold uppercase tracking-tight">Session de caisse</h1>
         <p className="text-xs text-gray-400 mt-1">Ouvrir et clôturer la session quotidienne</p>
       </div>
+
+      {/* ── Bandeau session périmée ────────────────────────────────────── */}
+      {needsSession && session && isStaleSession(session.start_time) && (
+        <div className="flex items-start gap-3 bg-orange-50 border border-orange-300 rounded-xl px-4 py-3">
+          <AlertTriangle size={18} className="text-orange-500 mt-0.5 shrink-0" />
+          <div>
+            <p className="text-sm font-semibold text-orange-700">Session non clôturée</p>
+            <p className="text-xs text-orange-600 mt-0.5">
+              La session ouverte le {new Date(session.start_time).toLocaleDateString('fr-FR', { day: '2-digit', month: 'long', year: 'numeric' })} à {new Date(session.start_time).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })} n'a pas été clôturée.
+              Veuillez la fermer avant d'en ouvrir une nouvelle.
+            </p>
+          </div>
+        </div>
+      )}
 
       {/* ── Statut session courante ─────────────────────────────────────── */}
       {needsSession && (
@@ -166,9 +192,10 @@ export default function CashSessionPage() {
                     <table className="table table-sm w-full">
                       <thead>
                         <tr className="text-xs uppercase tracking-widest text-gray-400">
-                          <th>Date</th>
+                          <th>Ouverture</th>
+                          <th>Fermeture</th>
                           <th>Employé</th>
-                          <th className="text-right">Ouverture</th>
+                          <th className="text-right">Fond ouv.</th>
                           <th className="text-right">Attendu</th>
                           <th className="text-right">Compté</th>
                           <th className="text-right">Écart</th>
@@ -180,7 +207,10 @@ export default function CashSessionPage() {
                           return (
                             <tr key={s.id} className="hover:bg-base-300/40">
                               <td className="text-xs text-gray-400 whitespace-nowrap">
-                                {new Date(s.start_time).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' })}
+                                {fmtDateTime(s.start_time)}
+                              </td>
+                              <td className="text-xs text-gray-400 whitespace-nowrap">
+                                {s.end_time ? fmtDateTime(s.end_time) : <span className="text-emerald-500 font-medium">En cours</span>}
                               </td>
                               <td className="text-sm font-medium">{s.opened_by_username}</td>
                               <td className="text-right text-sm">{fmt(s.opening_balance)}</td>

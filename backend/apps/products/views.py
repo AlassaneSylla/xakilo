@@ -1,6 +1,7 @@
 from django.db.models import F, OuterRef, Subquery
 from django.shortcuts import get_object_or_404
 from rest_framework.decorators import api_view, permission_classes
+from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework import status
@@ -10,18 +11,48 @@ from apps.stock.models.entry import Entry
 from .serializers import ProductSerializer
 
 
+class _ProductPagination(PageNumberPagination):
+    page_size = 20
+    page_size_query_param = 'page_size'
+    max_page_size = 200
+
+    def paginate_queryset(self, queryset, request, view=None):
+        if 'page' not in request.query_params:
+            return None
+        return super().paginate_queryset(queryset, request, view)
+
+
 def _product_qs(user):
     if user.boutique_id:
         return Product.objects.filter(boutique_id=user.boutique_id)
     return Product.objects.all()
 
 
+def _annotate_last_entry(qs):
+    last_entry_qs = Entry.objects.filter(product=OuterRef('pk')).order_by('-date_register')
+    return qs.annotate(
+        _last_supplier=Subquery(last_entry_qs.values('supplier')[:1]),
+        _last_entry_date=Subquery(last_entry_qs.values('date_register')[:1]),
+    )
+
+
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def get_products(request):
-    products = _product_qs(request.user).prefetch_related('entries').order_by('-id')
-    serializer = ProductSerializer(products, many=True)
-    return Response(serializer.data, status=status.HTTP_200_OK)
+    search = request.query_params.get('search', '').strip()
+    low_stock_only = request.query_params.get('low_stock_only') == 'true'
+
+    qs = _annotate_last_entry(_product_qs(request.user)).order_by('-id')
+    if search:
+        qs = qs.filter(product_name__icontains=search)
+    if low_stock_only:
+        qs = qs.filter(stock__lte=F('alert'))
+
+    paginator = _ProductPagination()
+    page = paginator.paginate_queryset(qs, request)
+    if page is not None:
+        return paginator.get_paginated_response(ProductSerializer(page, many=True).data)
+    return Response(ProductSerializer(qs, many=True).data, status=status.HTTP_200_OK)
 
 
 @api_view(['GET'])
@@ -79,20 +110,14 @@ def delete_product(request, id):
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def low_stock_product(request):
-    """
-    Retourne les produits dont le stock est faible
-    le dernier fournisseur et la date
-    """
-    last_entry = Entry.objects.filter(product=OuterRef('pk')).order_by('-date_register')
-    
-    low_stock = _product_qs(request.user).filter(stock__lte=F('alert')).annotate(
-        last_supplier=Subquery(last_entry.values('supplier')[:1]),          
-        last_entry_date=Subquery(last_entry.values('date_register')[:1])    
-    ).order_by('stock')
-    
-    serializer = ProductSerializer(low_stock, many=True)
+    qs = _product_qs(request.user).filter(stock__lte=F('alert'))
 
-    return Response({
-        "count": low_stock.count(),
-        "products": serializer.data
-    })
+    # Sans ?page : réponse rapide count-only (badge, provider) — 1 seule requête COUNT
+    if 'page' not in request.query_params:
+        return Response({"count": qs.count(), "products": []})
+
+    # Avec ?page : liste paginée avec annotations complètes (AlertsPage)
+    annotated_qs = _annotate_last_entry(qs).order_by('stock')
+    paginator = _ProductPagination()
+    page_data = paginator.paginate_queryset(annotated_qs, request)
+    return paginator.get_paginated_response(ProductSerializer(page_data, many=True).data)

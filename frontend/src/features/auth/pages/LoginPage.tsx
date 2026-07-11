@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AnimatePresence } from 'framer-motion';
 import { Mail, Lock, Eye, EyeOff } from 'lucide-react';
@@ -21,7 +21,15 @@ export default function LoginPage() {
   const [loading,      setLoading]      = useState(false);
   const [welcomeName,  setWelcomeName]  = useState<string | null>(null);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  useEffect(() => {
+    const msg = sessionStorage.getItem('authError');
+    if (msg) {
+      toast.error(msg, { duration: 6000 });
+      sessionStorage.removeItem('authError');
+    }
+  }, []);
+
+  const handleSubmit = async (e: { preventDefault(): void }) => {
     e.preventDefault();
     setLoading(true);
     try {
@@ -30,8 +38,14 @@ export default function LoginPage() {
       setWelcomeName(me.first_name || me.username);
       const destination = me.is_superuser ? PATHS.ADMIN_HOME : PATHS.HOME;
       setTimeout(() => navigate(destination), 2200);
-    } catch {
-      toast.error('Identifiant ou mot de passe incorrect');
+    } catch (err) {
+      const e = err as { response?: { status?: number; data?: { detail?: string } } };
+      const detail = e?.response?.data?.detail ?? '';
+      if (e?.response?.status === 403 && detail.includes('suspendue')) {
+        toast.error(detail, { duration: 6000 });
+      } else {
+        toast.error('Identifiant ou mot de passe incorrect');
+      }
     } finally {
       setLoading(false);
     }
@@ -88,20 +102,17 @@ export default function LoginPage() {
                 <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">
                   Adresse email
                 </label>
-                <div className="relative">
-                  <Mail
-                    size={15}
-                    className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"
-                  />
+                <label className="input flex items-center gap-2 w-full border border-gray-200 focus-within:border-(--primary) focus-within:shadow-[0_0_0_3px_rgba(0,196,180,0.15)] transition-all duration-200">
+                  <Mail size={15} className="text-gray-400 shrink-0" />
                   <input
                     type="email"
-                    className="input input-bordered w-full pl-9"
+                    className="grow outline-none"
                     placeholder="votre@email.com"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     required
                   />
-                </div>
+                </label>
               </div>
 
               {/* Mot de passe */}
@@ -109,14 +120,11 @@ export default function LoginPage() {
                 <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">
                   Mot de passe
                 </label>
-                <div className="relative">
-                  <Lock
-                    size={15}
-                    className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"
-                  />
+                <label className="input flex items-center gap-2 w-full border border-gray-200 focus-within:border-(--primary) focus-within:shadow-[0_0_0_3px_rgba(0,196,180,0.15)] transition-all duration-200">
+                  <Lock size={15} className="text-gray-400 shrink-0" />
                   <input
                     type={showPassword ? 'text' : 'password'}
-                    className="input input-bordered w-full pl-9 pr-10"
+                    className="grow outline-none"
                     placeholder="Mot de passe"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
@@ -126,11 +134,11 @@ export default function LoginPage() {
                     type="button"
                     tabIndex={-1}
                     onClick={() => setShowPassword((v) => !v)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+                    className="text-gray-400 hover:text-gray-600 transition-colors shrink-0"
                   >
                     {showPassword ? <EyeOff size={15} /> : <Eye size={15} />}
                   </button>
-                </div>
+                </label>
               </div>
 
               <Button variant="dark" size="md" type="submit" loading={loading} className="w-full">

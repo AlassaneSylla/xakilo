@@ -28,6 +28,9 @@ class Payment(models.Model):
     class Meta:
         db_table  = 'payments'
         ordering  = ['date']
+        indexes = [
+            models.Index(fields=['removal', 'date']),
+        ]
 
     def __str__(self):
         return f"{self.removal.removal_ref} – {self.amount} FCFA ({self.mode})"

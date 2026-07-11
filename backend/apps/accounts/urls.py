@@ -1,6 +1,7 @@
 from django.urls import path
 from . import views
-from .reports_views import get_reports
+from .reports_views    import get_reports
+from .dashboard_views  import get_dashboard_stats
 
 urlpatterns = [
     path('me/',              views.get_me),
@@ -9,5 +10,6 @@ urlpatterns = [
     path('<int:id>/',        views.get_user),
     path('<int:id>/update/', views.patch_user),
     path('<int:id>/delete/', views.delete_user),
-    path('reports/',         get_reports),   # ?period=day|month|year
+    path('reports/',         get_reports),         # ?period=day|month|year
+    path('dashboard/',       get_dashboard_stats), # KPIs + charts
 ]

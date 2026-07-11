@@ -43,12 +43,18 @@ class Entry(models.Model):
     class Meta:
         managed = True
         db_table = 'entries'
+        indexes = [
+            models.Index(fields=['boutique', 'date_register']),
+            models.Index(fields=['product', 'date_register']),
+        ]
 
     def save(self, *args, **kwargs):
         if not self.entry_reference:
+            super().save(*args, **kwargs)
             year = timezone.now().year
-            count = Entry.objects.filter(date_register__year=year).count() + 1
-            self.entry_reference = f"ENT-{year}-{count:04d}"
+            self.entry_reference = f"ENT-{year}-{self.id:04d}"
+            Entry.objects.filter(pk=self.pk).update(entry_reference=self.entry_reference)
+            return
         super().save(*args, **kwargs)
 
     def __str__(self):

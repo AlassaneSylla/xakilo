@@ -3,6 +3,7 @@ import { Plus, Trash2, Zap } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { client } from '../../../shared/api/client';
 import Button from '../../../shared/components/ui/Button';
+import ProductCombobox from '../../../shared/components/ui/ProductCombobox';
 import { useCashSession } from '../../../providers/CashSessionProvider';
 import type { Product } from '../../products/types';
 import type { Removal } from '../../stock/removals/types';
@@ -17,7 +18,6 @@ function computeStatus(paid: number, total: number) {
   if (paid > 0)                   return { key: 'partiellement_payee', label: 'Partiellement payée', color: 'badge-warning' };
   return                                  { key: 'en_attente',         label: 'En attente',          color: 'badge-ghost'   };
 }
-
 export default function QuickSaleModal({ onSuccess }: Props) {
   const { ensureSession } = useCashSession();
 
@@ -44,15 +44,18 @@ export default function QuickSaleModal({ onSuccess }: Props) {
     ]);
   };
 
-  const updateLine = (idx: number, field: keyof LineItem, value: number | string) => {
+  const updateLineProduct = (idx: number, p: Product) => {
     setLines((prev) => {
       const next = [...prev];
-      if (field === 'product_id') {
-        const p = products.find((x) => x.id === Number(value));
-        if (p) next[idx] = { ...next[idx], product_id: p.id, product_name: p.product_name, unit_price: p.unit_price ?? 0 };
-      } else {
-        (next[idx] as Record<string, string | number>)[field] = field === 'quantity' ? Number(value) : value;
-      }
+      next[idx] = { ...next[idx], product_id: p.id, product_name: p.product_name, unit_price: p.unit_price ?? 0 };
+      return next;
+    });
+  };
+
+  const updateLineQty = (idx: number, qty: number) => {
+    setLines((prev) => {
+      const next = [...prev];
+      next[idx] = { ...next[idx], quantity: qty };
       return next;
     });
   };
@@ -144,23 +147,29 @@ export default function QuickSaleModal({ onSuccess }: Props) {
               </p>
             )}
 
+            {/* En-têtes colonnes */}
+            {lines.length > 0 && (
+              <div className="grid grid-cols-12 gap-2 mb-1 px-1">
+                <span className="col-span-5 text-xs text-gray-400 uppercase tracking-wide">Produit</span>
+                <span className="col-span-2 text-xs text-gray-400 uppercase tracking-wide text-center">Qté</span>
+                <span className="col-span-4 text-xs text-gray-400 uppercase tracking-wide text-right">Sous-total</span>
+              </div>
+            )}
+
             <div className="space-y-2">
               {lines.map((line, idx) => (
                 <div key={idx} className="grid grid-cols-12 gap-2 items-center">
-                  <select
-                    className="select select-sm col-span-5"
-                    value={line.product_id}
-                    onChange={(e) => updateLine(idx, 'product_id', e.target.value)}
-                  >
-                    {products.map((p) => (
-                      <option key={p.id} value={p.id}>{p.product_name} (stock: {p.stock})</option>
-                    ))}
-                  </select>
+                  <ProductCombobox
+                    products={products}
+                    value={line}
+                    onChange={(p) => updateLineProduct(idx, p)}
+                    className="col-span-5"
+                  />
                   <input
                     type="number" min={1}
                     className="input input-sm col-span-2 text-center"
                     value={line.quantity}
-                    onChange={(e) => updateLine(idx, 'quantity', e.target.value)}
+                    onChange={(e) => updateLineQty(idx, Number(e.target.value))}
                   />
                   <div className="col-span-4 text-sm text-right pr-1 text-gray-600">
                     {(line.quantity * line.unit_price).toLocaleString('fr-FR')} F
@@ -185,7 +194,6 @@ export default function QuickSaleModal({ onSuccess }: Props) {
             <p className="text-xs font-bold uppercase tracking-widest text-gray-400">Encaissement</p>
 
             <div className="flex gap-3">
-              {/* Montant versé */}
               <div className="flex-1">
                 <label className="text-xs font-semibold text-gray-500 block mb-1">Montant versé (F)</label>
                 <input
@@ -197,7 +205,6 @@ export default function QuickSaleModal({ onSuccess }: Props) {
                 />
               </div>
 
-              {/* Mode de paiement */}
               <div className="flex-1">
                 <label className="text-xs font-semibold text-gray-500 block mb-1">Mode</label>
                 <select
@@ -212,7 +219,6 @@ export default function QuickSaleModal({ onSuccess }: Props) {
               </div>
             </div>
 
-            {/* Statut calculé + info monnaie/reste */}
             <div className="flex items-center justify-between border-t border-base-300 pt-2">
               <div className="flex items-center gap-2 text-sm">
                 <span className="text-gray-500 text-xs">Statut :</span>

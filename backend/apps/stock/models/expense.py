@@ -33,6 +33,9 @@ class Expense(models.Model):
 
     class Meta:
         db_table = 'expenses'
+        indexes = [
+            models.Index(fields=['boutique', 'date_register']),
+        ]
 
     def __str__(self):
         return f"{self.description} – {self.amount} FCFA"

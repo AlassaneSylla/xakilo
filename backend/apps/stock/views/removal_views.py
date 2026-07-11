@@ -1,10 +1,18 @@
+from django.db.models import Q
 from django.http import JsonResponse
 from django.utils import timezone
 from rest_framework.decorators import api_view, permission_classes
+from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import IsAuthenticated
 from django.shortcuts import get_object_or_404
 from rest_framework.response import Response
 from rest_framework import status
+
+
+class _Pagination(PageNumberPagination):
+    page_size = 20
+    page_size_query_param = 'page_size'
+    max_page_size = 100
 
 from apps.stock.models.removal import Removal, RemovalItem
 from apps.stock.models.payment import Payment
@@ -37,11 +45,26 @@ def _require_session(user):
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def get_removals(request):
-    removals = _removal_qs(request.user).prefetch_related(
+    qs = _removal_qs(request.user).prefetch_related(
         'items', 'items__product', 'payments', 'payments__received_by'
     ).order_by('-date_register')
-    serializer = RemovalSerializer(removals, many=True)
-    return Response(serializer.data, status=status.HTTP_200_OK)
+    search = request.query_params.get('search', '').strip()
+    date   = request.query_params.get('date', '').strip()
+    if search:
+        qs = qs.filter(
+            Q(client_name__icontains=search) |
+            Q(removal_ref__icontains=search) |
+            Q(destination__icontains=search)
+        )
+    if date:
+        qs = qs.filter(date_register__date=date)
+    destination = request.query_params.get('destination', '').strip()
+    if destination:
+        qs = qs.filter(destination=destination)
+    paginator = _Pagination()
+    page = paginator.paginate_queryset(qs, request)
+    serializer = RemovalSerializer(page, many=True)
+    return paginator.get_paginated_response(serializer.data)
 
 
 @api_view(['GET'])
@@ -147,13 +170,15 @@ def get_unpaid_invoices(request):
         invoice_status__in=['en_attente', 'partiellement_payee'],
     ).prefetch_related('payments').order_by('date_register')
 
+    paginator = _Pagination()
+    page_qs = paginator.paginate_queryset(qs, request)
+
     records = []
-    for r in qs:
+    for r in (page_qs or []):
         amount_paid = sum(p.amount for p in r.payments.all())
         total       = r.invoice_total_amount or 0
         balance_due = max(0, total - amount_paid)
 
-        # Statut incohérent : solde nul mais pas marqué payée → on corrige
         if balance_due == 0:
             r.invoice_status = 'payee'
             r.save(update_fields=['invoice_status'])
@@ -171,7 +196,7 @@ def get_unpaid_invoices(request):
             'status':         r.invoice_status,
         })
 
-    return Response(records, status=status.HTTP_200_OK)
+    return paginator.get_paginated_response(records)
 
 
 @api_view(['GET'])
@@ -198,8 +223,11 @@ def get_losses(request):
     elif period == 'custom' and date_from and date_to:
         qs = qs.filter(date_register__date__gte=date_from, date_register__date__lte=date_to)
 
+    paginator = _Pagination()
+    page_qs = paginator.paginate_queryset(qs, request)
+
     records = []
-    for removal in qs:
+    for removal in (page_qs or []):
         for item in removal.items.all():
             records.append({
                 'date':          removal.date_register,
@@ -210,7 +238,7 @@ def get_losses(request):
                 'proof_image':   request.build_absolute_uri(removal.proof_image.url) if removal.proof_image else None,
             })
 
-    return Response(records, status=status.HTTP_200_OK)
+    return paginator.get_paginated_response(records)
 
 
 @api_view(['PATCH'])
@@ -223,7 +251,26 @@ def patch_removal(request, id):
 
     try:
         if 'invoice_status' in data:
-            removal = update_removal_status(removal, data['invoice_status'])
+            new_status = data['invoice_status']
+
+            if new_status == 'annulee':
+                age_days = (timezone.now() - removal.date_register).days
+                is_privileged = request.user.is_superuser or request.user.role == 'OWNER'
+
+                if age_days > 7:
+                    return Response(
+                        {'error': 'Cette sortie date de plus de 7 jours. Veuillez créer un bon de retour à la place.'},
+                        status=status.HTTP_403_FORBIDDEN,
+                    )
+                if age_days > 2 and not is_privileged:
+                    return Response(
+                        {'error': 'Cette sortie date de plus de 2 jours. Veuillez contacter le propriétaire pour l\'annulation.'},
+                        status=status.HTTP_403_FORBIDDEN,
+                    )
+                reason = data.get('cancellation_reason', '')
+                removal = update_removal_status(removal, new_status, cancelled_by=request.user, cancellation_reason=reason)
+            else:
+                removal = update_removal_status(removal, new_status)
 
         allowed_fields = ['client_name']
         update_data = {k: v for k, v in data.items() if k in allowed_fields}

@@ -14,13 +14,15 @@ class ProductSerializer(serializers.ModelSerializer):
         fields = '__all__'
         read_only_fields = ['product_ref', 'stock', 'created_by_username']
 
-    def _last_entry(self, obj):
-        return obj.entries.order_by('-date_register').first()
-
     def get_last_supplier(self, obj):
-        e = self._last_entry(obj)
+        if hasattr(obj, '_last_supplier'):
+            return obj._last_supplier
+        e = obj.entries.order_by('-date_register').first()
         return e.supplier if e else None
 
     def get_last_entry_date(self, obj):
-        e = self._last_entry(obj)
+        if hasattr(obj, '_last_entry_date'):
+            dt = obj._last_entry_date
+            return dt.isoformat() if dt else None
+        e = obj.entries.order_by('-date_register').first()
         return e.date_register.isoformat() if e else None

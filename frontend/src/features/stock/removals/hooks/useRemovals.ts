@@ -2,25 +2,25 @@ import { useCallback, useEffect, useState } from 'react';
 import { getRemovals, postRemoval } from '../api/removalsApi';
 import type { Removal, RemovalPayload } from '../types';
 
-export function useRemovals() {
+export function useRemovals(page: number, search: string, date: string) {
   const [removals, setRemovals] = useState<Removal[]>([]);
-  const [loading, setLoading]   = useState(true);
+  const [count,    setCount]    = useState(0);
+  const [loading,  setLoading]  = useState(true);
 
   const fetchRemovals = useCallback(() => {
     setLoading(true);
-    getRemovals()
-      .then(setRemovals)
+    getRemovals(page, search, date)
+      .then(({ results, count: c }) => { setRemovals(results); setCount(c); })
       .catch(() => {})
       .finally(() => setLoading(false));
-  }, []);
+  }, [page, search, date]);
 
   useEffect(() => { fetchRemovals(); }, [fetchRemovals]);
 
   const create = async (payload: RemovalPayload) => {
     const created = await postRemoval(payload);
-    setRemovals((prev) => [created, ...prev]);
     return created;
   };
 
-  return { removals, loading, create, refetch: fetchRemovals };
+  return { removals, count, loading, create, refetch: fetchRemovals };
 }

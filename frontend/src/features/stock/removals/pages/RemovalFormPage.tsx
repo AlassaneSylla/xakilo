@@ -3,9 +3,10 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { CircleX, Plus, ImagePlus, X } from 'lucide-react';
 import toast from 'react-hot-toast';
 
-import { useRemovals } from '../hooks/useRemovals';
+import { postRemoval } from '../api/removalsApi';
 import { getProducts } from '../../../products/api/productApi';
 import Button from '../../../../shared/components/ui/Button';
+import ProductCombobox from '../../../../shared/components/ui/ProductCombobox';
 import { PATHS } from '../../../../router/paths';
 import { useCashSession } from '../../../../providers/CashSessionProvider';
 import type { Product } from '../../../products/types';
@@ -35,7 +36,7 @@ export default function RemovalFormPage() {
   const navigate  = useNavigate();
   const location  = useLocation();
   const prefill   = (location.state ?? {}) as { prefillProductId?: number };
-  const { create } = useRemovals();
+  const create = postRemoval;
   const { ensureSession } = useCashSession();
   const [products, setProducts] = useState<Product[]>([]);
   const [form, setForm]         = useState<RemovalPayload>({ ...EMPTY_FORM });
@@ -155,21 +156,23 @@ export default function RemovalFormPage() {
 
           {/* Produits */}
           <div>
-            {form.items.map((item, i) => (
-              <div key={i} className="flex items-center gap-2 mb-2">
-                <select className="select select-bordered flex-1" value={item.product}
-                  onChange={(e) => updateItem(i, 'product', Number(e.target.value))}>
-                  <option value="">Sélectionner un produit</option>
-                  {products.map((p) => (
-                    <option key={p.id} value={p.id}>{p.product_name}</option>
-                  ))}
-                </select>
-                <input type="number" className="input input-neutral w-24" min={1}
-                  value={item.quantity}
-                  onChange={(e) => updateItem(i, 'quantity', Number(e.target.value))} />
-                <CircleX className="text-red-500 cursor-pointer" onClick={() => removeItem(i)} />
-              </div>
-            ))}
+            {form.items.map((item, i) => {
+              const prod = products.find((p) => p.id === item.product);
+              return (
+                <div key={i} className="flex items-center gap-2 mb-2">
+                  <ProductCombobox
+                    products={products}
+                    value={{ product_id: item.product, product_name: prod?.product_name ?? '' }}
+                    onChange={(p) => updateItem(i, 'product', p.id)}
+                    className="flex-1"
+                  />
+                  <input type="number" className="input input-neutral w-24" min={1}
+                    value={item.quantity}
+                    onChange={(e) => updateItem(i, 'quantity', Number(e.target.value))} />
+                  <CircleX className="text-red-500 cursor-pointer" onClick={() => removeItem(i)} />
+                </div>
+              );
+            })}
             <button type="button"
               className="btn btn-xs hover:text-(--brokenWhite) hover:bg-(--black)"
               onClick={addItem}>

@@ -1,4 +1,6 @@
+from django.db.models import Count, Prefetch
 from rest_framework.decorators import api_view, permission_classes
+from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework import status
@@ -6,6 +8,12 @@ from rest_framework import status
 from .serializers import UserSerializer, BoutiqueSerializer
 from .models import User, Boutique
 from .permissions import IsSuperUser, MAX_USERS_PER_BOUTIQUE
+
+
+class _BoutiquePagination(PageNumberPagination):
+    page_size = 20
+    page_size_query_param = 'page_size'
+    max_page_size = 100
 
 
 # ── Helpers ──────────────────────────────────────────────────────────────────
@@ -27,8 +35,17 @@ def get_me(request):
 @api_view(['GET'])
 @permission_classes([IsSuperUser])
 def get_boutiques(request):
-    serializer = BoutiqueSerializer(Boutique.objects.all(), many=True, context={'request': request})
-    return Response(serializer.data)
+    qs = (
+        Boutique.objects
+        .prefetch_related(
+            Prefetch('users', queryset=User.objects.filter(role='OWNER'), to_attr='_owners')
+        )
+        .annotate(_user_count=Count('users'))
+    )
+    paginator = _BoutiquePagination()
+    page = paginator.paginate_queryset(qs, request)
+    serializer = BoutiqueSerializer(page, many=True, context={'request': request})
+    return paginator.get_paginated_response(serializer.data)
 
 
 @api_view(['POST'])
@@ -39,6 +56,13 @@ def post_boutique(request):
         serializer.save()
         return Response(serializer.data, status=status.HTTP_201_CREATED)
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(['GET'])
+@permission_classes([IsSuperUser])
+def get_boutique_users(request, id):
+    users = User.objects.filter(boutique_id=id).order_by('role', 'first_name')
+    return Response(UserSerializer(users, many=True).data)
 
 
 @api_view(['GET'])
@@ -69,6 +93,9 @@ def patch_boutique(request, id):
     serializer = BoutiqueSerializer(boutique, data=request.data, partial=True, context={'request': request})
     if serializer.is_valid():
         serializer.save()
+        # Cascade is_active aux utilisateurs de la boutique
+        if 'is_active' in request.data:
+            boutique.users.exclude(is_superuser=True).update(is_active=serializer.validated_data['is_active'])
         return Response(serializer.data)
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
@@ -138,6 +165,8 @@ def post_user(request):
             password=serializer.validated_data['password'],
             first_name=serializer.validated_data.get('first_name', ''),
             last_name=serializer.validated_data.get('last_name', ''),
+            phone=serializer.validated_data.get('phone', ''),
+            address=serializer.validated_data.get('address', ''),
             role=serializer.validated_data.get('role', 'EMPLOYEE'),
             boutique=boutique,
             is_staff=serializer.validated_data.get('is_staff', False),

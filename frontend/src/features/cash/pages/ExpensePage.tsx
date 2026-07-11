@@ -85,7 +85,7 @@ export default function ExpensePage() {
               </select>
               <button
                 type="submit" disabled={loading || blocked}
-                className="btn bg-gray-900 text-white hover:bg-gray-700 border-0 flex items-center gap-2 w-full"
+                className="btn bg-(--black) text-white hover:opacity-90 border-0 flex items-center gap-2 w-full"
               >
                 {loading
                   ? <span className="loading loading-spinner loading-sm" />

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Plus, SquarePen, Trash, Store, Users, X, User, ToggleLeft, ToggleRight, KeyRound } from 'lucide-react';
+import { Plus, SquarePen, Trash, Store, Users, X, User, ToggleLeft, ToggleRight, KeyRound, ChevronLeft, ChevronRight, Phone, MapPin, Mail, Smartphone } from 'lucide-react';
 import toast from 'react-hot-toast';
 import Swal from 'sweetalert2';
 
@@ -33,7 +33,8 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
 }
 
 export default function BoutiquesPage() {
-  const { boutiques, loading, refetch } = useBoutiques();
+  const { boutiques, loading, refetch, count, page, setPage } = useBoutiques();
+  const totalPages = Math.ceil(count / 20);
   const [mode, setMode] = useState<ModalMode>('add');
   const [showModal, setShowModal] = useState(false);
   const [selected, setSelected] = useState<Boutique | null>(null);
@@ -73,10 +74,9 @@ export default function BoutiquesPage() {
     setOwnerNewPassword('');
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
-    // Validation stricte : le propriétaire est obligatoire à la création
     if (mode === 'add') {
       const missing = !owner.first_name || !owner.last_name || !owner.email || !owner.username || !owner.password;
       if (missing) {
@@ -98,7 +98,6 @@ export default function BoutiquesPage() {
       } else if (selected) {
         await patchBoutique(selected.id, form);
 
-        // Mise à jour du mot de passe propriétaire si renseigné
         if (ownerNewPassword && selected.owner_id) {
           await updateUser(selected.owner_id, { password: ownerNewPassword });
           toast.success('Mot de passe propriétaire mis à jour');
@@ -167,7 +166,7 @@ export default function BoutiquesPage() {
     <div>
       <h1 className="text-2xl font-bold uppercase mb-2">Gestion des Boutiques</h1>
       <p className="text-sm text-gray-400 mb-8">
-        Accès Super Administrateur — {boutiques.length} boutique(s) enregistrée(s)
+        Accès Super Administrateur — {count} boutique(s) enregistrée(s)
       </p>
 
       <div className="flex justify-end mb-6">
@@ -203,20 +202,41 @@ export default function BoutiquesPage() {
                 </div>
               </div>
 
-              {/* Infos boutique */}
-              <div className="text-sm space-y-1 text-gray-500">
-                {b.phone && <p>📞 <span className="font-medium text-gray-700">{b.phone}</span></p>}
-                {b.address && <p>📍 {b.address}</p>}
-                {b.email && <p>✉️ {b.email}</p>}
+              <div className="text-sm space-y-1.5 text-gray-500">
+                {b.phone && (
+                  <div className="flex items-center gap-1.5">
+                    <Phone size={13} className="shrink-0" />
+                    <span className="font-medium text-gray-700">{b.phone}</span>
+                  </div>
+                )}
+                {b.address && (
+                  <div className="flex items-center gap-1.5">
+                    <MapPin size={13} className="shrink-0" />
+                    <span>{b.address}</span>
+                  </div>
+                )}
+                {b.email && (
+                  <div className="flex items-center gap-1.5">
+                    <Mail size={13} className="shrink-0" />
+                    <span>{b.email}</span>
+                  </div>
+                )}
               </div>
 
-              {/* Section propriétaire */}
               <div className="border-t border-base-300 pt-2 mt-1">
                 <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1">Propriétaire</p>
                 {b.owner_name ? (
-                  <div className="text-sm space-y-0.5">
-                    <p className="font-semibold text-gray-800">👤 {b.owner_name}</p>
-                    {b.owner_phone && <p className="text-gray-500">📱 {b.owner_phone}</p>}
+                  <div className="text-sm space-y-1">
+                    <div className="flex items-center gap-1.5 font-semibold text-gray-800">
+                      <User size={13} className="shrink-0" />
+                      <span>{b.owner_name}</span>
+                    </div>
+                    {b.owner_phone && (
+                      <div className="flex items-center gap-1.5 text-gray-500">
+                        <Smartphone size={13} className="shrink-0" />
+                        <span>{b.owner_phone}</span>
+                      </div>
+                    )}
                   </div>
                 ) : (
                   <p className="text-xs text-gray-400 italic">Aucun propriétaire assigné</p>
@@ -224,7 +244,7 @@ export default function BoutiquesPage() {
               </div>
 
               <div className="flex items-center gap-1 mt-1 text-xs text-gray-400">
-                <Users size={12} />
+                <Users size={13} />
                 <span>{b.user_count} utilisateur(s)</span>
                 <span className={`ml-auto badge badge-xs ${b.is_active ? 'badge-success' : 'badge-error'}`}>
                   {b.is_active ? 'Active' : 'Inactive'}
@@ -239,6 +259,28 @@ export default function BoutiquesPage() {
         <div className="text-center py-16 text-gray-400">
           <Store size={40} className="mx-auto mb-3 opacity-30" />
           <p>Aucune boutique enregistrée.</p>
+        </div>
+      )}
+
+      {totalPages > 1 && (
+        <div className="flex items-center justify-center gap-3 mt-8">
+          <button
+            type="button"
+            onClick={() => setPage(p => p - 1)}
+            disabled={page === 1}
+            className="btn btn-sm btn-ghost disabled:opacity-30"
+          >
+            <ChevronLeft size={16} />
+          </button>
+          <span className="text-sm font-medium">{page} / {totalPages}</span>
+          <button
+            type="button"
+            onClick={() => setPage(p => p + 1)}
+            disabled={page >= totalPages}
+            className="btn btn-sm btn-ghost disabled:opacity-30"
+          >
+            <ChevronRight size={16} />
+          </button>
         </div>
       )}
 
@@ -337,10 +379,16 @@ export default function BoutiquesPage() {
                   </div>
                   {selected?.owner_name ? (
                     <div className="space-y-3">
-                      <div className="bg-base-300 rounded-lg px-4 py-3 text-sm">
-                        <p className="font-semibold text-gray-700">👤 {selected.owner_name}</p>
+                      <div className="bg-base-300 rounded-lg px-4 py-3 text-sm space-y-1">
+                        <div className="flex items-center gap-1.5 font-semibold text-gray-700">
+                          <User size={13} className="shrink-0" />
+                          <span>{selected.owner_name}</span>
+                        </div>
                         {selected.owner_phone && (
-                          <p className="text-gray-500 text-xs mt-0.5">📱 {selected.owner_phone}</p>
+                          <div className="flex items-center gap-1.5 text-xs text-gray-500">
+                            <Smartphone size={13} className="shrink-0" />
+                            <span>{selected.owner_phone}</span>
+                          </div>
                         )}
                       </div>
                       <Field label="Nouveau mot de passe (laisser vide pour ne pas changer)">

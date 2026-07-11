@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom';
-import { Zap, PackagePlus, ReceiptText, ArrowRight } from 'lucide-react';
+import { Zap, PackagePlus, ReceiptText, ArrowRight, Package, PackageCheck, PackageMinus, PackageX } from 'lucide-react';
 
 import { useDashboard } from '../hooks/useDashboard';
 import Card from '../../../shared/components/ui/Card';
@@ -67,10 +67,10 @@ export default function HomePage() {
 
       {/* KPIs */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card title="Produits en stock" value={stats.totalProducts} color="badge-accent" />
-        <Card title="Entrées ce mois" value={stats.entriesOfTheMonth} color="badge-success" />
-        <Card title="Sorties aujourd'hui" value={stats.removalsOfTheDay} color="badge-warning" />
-        <Card title="Produits en rupture" value={stats.lowStockCount} color="badge-error" />
+        <Card title="Produits en stock"   value={stats.totalProducts}      color="badge-accent"  icon={<Package size={30} />} />
+        <Card title="Entrées ce mois"     value={stats.entriesOfTheMonth}  color="badge-success" icon={<PackageCheck size={30} />} />
+        <Card title="Sorties aujourd'hui" value={stats.removalsOfTheDay}   color="badge-warning" icon={<PackageMinus size={30} />} />
+        <Card title="Produits en rupture" value={stats.lowStockCount}      color="badge-error"   icon={<PackageX size={30} />} />
       </div>
 
       {/* Graphiques */}

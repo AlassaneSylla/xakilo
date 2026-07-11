@@ -11,7 +11,7 @@ export default function Footer() {
       </span>
       <span className="text-gray-500">
         Développé par <span className="font-semibold text-white">Alassane Sylla</span>
-        <span className="hidden sm:inline text-gray-600"> · v{__APP_VERSION__}</span>
+        <span className="hidden sm:inline text-gray-400"> · v{__APP_VERSION__}</span>
       </span>
     </footer>
   );

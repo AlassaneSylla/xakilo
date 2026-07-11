@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { getLowStockProducts } from '../api/productApi';
+import { getProductsPaginated } from '../api/productApi';
 import type { Product } from '../types';
 
 export default function AlertsPage() {
@@ -7,8 +7,8 @@ export default function AlertsPage() {
   const [loading, setLoading]   = useState(true);
 
   useEffect(() => {
-    getLowStockProducts()
-      .then(({ products }) => setProducts(products))
+    getProductsPaginated(1, '', true)
+      .then(({ results }) => setProducts(results))
       .catch(() => {})
       .finally(() => setLoading(false));
   }, []);

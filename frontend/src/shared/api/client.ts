@@ -16,13 +16,27 @@ client.interceptors.request.use((config) => {
   return config;
 });
 
-// Rafraîchit le token automatiquement sur 401
+// Rafraîchit le token automatiquement sur 401 ; gère la suspension boutique (403)
 client.interceptors.response.use(
   (response) => response,
   async (error) => {
     const original = error.config;
+    const status   = error.response?.status;
+    const detail   = error.response?.data?.detail as string | undefined;
 
-    if (error.response?.status === 401 && !original._retry) {
+    // Boutique suspendue → si déjà sur /login, laisser le catch local gérer ;
+    //                        sinon stocker le message et rediriger
+    if (status === 403 && detail?.includes('suspendue')) {
+      localStorage.removeItem('accessToken');
+      localStorage.removeItem('refreshToken');
+      if (!window.location.pathname.includes('/login')) {
+        sessionStorage.setItem('authError', detail);
+        window.location.href = '/login';
+      }
+      return Promise.reject(error);
+    }
+
+    if (status === 401 && !original._retry && !original.url?.includes('token/')) {
       original._retry = true;
       try {
         const refreshToken = localStorage.getItem('refreshToken');

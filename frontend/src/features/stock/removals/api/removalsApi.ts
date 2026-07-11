@@ -1,8 +1,13 @@
 import { client } from '../../../../shared/api/client';
 import type { LossRecord, Removal, RemovalPayload } from '../types';
 
-export const getRemovals = async (): Promise<Removal[]> => {
-  const { data } = await client.get<Removal[]>('removals/');
+export type PaginatedRemovals = { count: number; results: Removal[] };
+
+export const getRemovals = async (page = 1, search = '', date = ''): Promise<PaginatedRemovals> => {
+  const params: Record<string, string | number> = { page };
+  if (search) params.search = search;
+  if (date) params.date = date;
+  const { data } = await client.get<PaginatedRemovals>('removals/', { params });
   return data;
 };
 
@@ -51,8 +56,11 @@ export const updateRemoval = async (id: number, payload: Partial<RemovalPayload>
   return data;
 };
 
-export const cancelRemoval = async (id: number): Promise<Removal> => {
-  const { data } = await client.patch<Removal>(`removals/${id}/update/`, { invoice_status: 'annulee' });
+export const cancelRemoval = async (id: number, reason = ''): Promise<Removal> => {
+  const { data } = await client.patch<Removal>(`removals/${id}/update/`, {
+    invoice_status: 'annulee',
+    cancellation_reason: reason,
+  });
   return data;
 };
 
@@ -68,8 +76,10 @@ export type UnpaidInvoice = {
   status: 'en_attente' | 'partiellement_payee';
 };
 
-export const getUnpaidInvoices = async (): Promise<UnpaidInvoice[]> => {
-  const { data } = await client.get<UnpaidInvoice[]>('removals/unpaid/');
+export type PaginatedUnpaid = { count: number; results: UnpaidInvoice[] };
+
+export const getUnpaidInvoices = async (page = 1): Promise<PaginatedUnpaid> => {
+  const { data } = await client.get<PaginatedUnpaid>(`removals/unpaid/?page=${page}`);
   return data;
 };
 
@@ -80,11 +90,12 @@ export const addPayment = async (
   await client.post(`removals/${removalId}/payments/add/`, payload);
 };
 
-export const getLossRegistry = async (params?: {
-  period?: string;
-  date_from?: string;
-  date_to?: string;
-}): Promise<LossRecord[]> => {
-  const { data } = await client.get<LossRecord[]>('removals/losses/', { params });
+export type PaginatedLoss = { count: number; results: LossRecord[] };
+
+export const getLossRegistry = async (
+  params?: { period?: string; date_from?: string; date_to?: string },
+  page = 1,
+): Promise<PaginatedLoss> => {
+  const { data } = await client.get<PaginatedLoss>('removals/losses/', { params: { ...params, page } });
   return data;
 };

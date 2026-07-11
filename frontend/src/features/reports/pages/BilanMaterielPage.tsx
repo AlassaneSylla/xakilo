@@ -215,6 +215,8 @@ export default function BilanMaterielPage() {
   const [dateFrom, setDateFrom] = useState('');
   const [dateTo,   setDateTo]   = useState('');
   const [lossRecords,  setLossRecords]  = useState<LossRecord[]>([]);
+  const [lossCount,    setLossCount]    = useState(0);
+  const [lossPage,     setLossPage]     = useState(1);
   const [lossLoading,  setLossLoading]  = useState(false);
   const [lossPeriodType, setLossPeriodType] = useState<'day' | 'month' | 'year'>('month');
 
@@ -289,15 +291,17 @@ export default function BilanMaterielPage() {
     else setLossMonth(m => m + 1);
   };
 
+  useEffect(() => { setLossPage(1); }, [lossParams.date_from, lossParams.date_to]); // eslint-disable-line react-hooks/exhaustive-deps
+
   useEffect(() => {
     if (!isOwner) return;
     setLossLoading(true);
-    getLossRegistry(lossParams)
-      .then(setLossRecords)
-      .catch(() => setLossRecords([]))
+    getLossRegistry(lossParams, lossPage)
+      .then(({ results, count }) => { setLossRecords(results); setLossCount(count); })
+      .catch(() => { setLossRecords([]); setLossCount(0); })
       .finally(() => setLossLoading(false));
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isOwner, lossParams.date_from, lossParams.date_to]);
+  }, [isOwner, lossParams.date_from, lossParams.date_to, lossPage]);
 
   const mat = data?.materiel;
   const topCats = data?.top_categories  ?? [];
@@ -598,7 +602,7 @@ export default function BilanMaterielPage() {
                     )}
 
                     <span className="text-xs text-gray-400 ml-auto">
-                      {lossRecords.length} perte{lossRecords.length !== 1 ? 's' : ''}
+                      {lossCount} perte{lossCount !== 1 ? 's' : ''}
                     </span>
                   </div>
 
@@ -608,6 +612,20 @@ export default function BilanMaterielPage() {
                     </div>
                   ) : (
                     <LossRegistryTable records={lossRecords} />
+                  )}
+
+                  {Math.ceil(lossCount / 20) > 1 && (
+                    <div className="flex items-center justify-center gap-3 mt-4 no-print">
+                      <button type="button" onClick={() => setLossPage(p => p - 1)} disabled={lossPage === 1}
+                        className="btn btn-xs btn-ghost disabled:opacity-30">
+                        <ChevronLeft size={14} />
+                      </button>
+                      <span className="text-xs">{lossPage} / {Math.ceil(lossCount / 20)}</span>
+                      <button type="button" onClick={() => setLossPage(p => p + 1)} disabled={lossPage >= Math.ceil(lossCount / 20)}
+                        className="btn btn-xs btn-ghost disabled:opacity-30">
+                        <ChevronRight size={14} />
+                      </button>
+                    </div>
                   )}
                 </div>
               </div>

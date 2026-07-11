@@ -1,4 +1,5 @@
 import { client } from '../../../shared/api/client';
+import type { User } from '../../users/types';
 
 export type BoutiquePayload = {
   name: string;
@@ -21,10 +22,13 @@ export type Boutique = {
   owner_id: number | null;
   owner_name: string | null;
   owner_phone: string | null;
+  owner_email: string | null;
 };
 
-export const getBoutiques = async (): Promise<Boutique[]> => {
-  const { data } = await client.get<Boutique[]>('boutiques/');
+export type PaginatedBoutiques = { count: number; results: Boutique[] };
+
+export const getBoutiques = async (page = 1): Promise<PaginatedBoutiques> => {
+  const { data } = await client.get<PaginatedBoutiques>(`boutiques/?page=${page}`);
   return data;
 };
 
@@ -40,4 +44,9 @@ export const patchBoutique = async (id: number, payload: Partial<BoutiquePayload
 
 export const deleteBoutique = async (id: number): Promise<void> => {
   await client.delete(`boutiques/${id}/delete/`);
+};
+
+export const getBoutiqueUsers = async (id: number): Promise<User[]> => {
+  const { data } = await client.get<User[]>(`boutiques/${id}/users/`);
+  return data;
 };

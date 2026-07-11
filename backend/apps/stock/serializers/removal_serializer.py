@@ -17,20 +17,23 @@ class RemovalItemSerializer(serializers.ModelSerializer):
 
 
 class RemovalSerializer(serializers.ModelSerializer):
-    created_by_username = serializers.CharField(source='created_by.username', read_only=True)
-    invoice             = serializers.SerializerMethodField()
-    products_label      = serializers.SerializerMethodField()
-    payments            = PaymentSerializer(many=True, read_only=True)
-    amount_paid         = serializers.SerializerMethodField()
-    balance_due         = serializers.SerializerMethodField()
+    created_by_username   = serializers.CharField(source='created_by.username', read_only=True)
+    cancelled_by_username = serializers.CharField(source='cancelled_by.username', read_only=True, default=None)
+    invoice               = serializers.SerializerMethodField()
+    products_label        = serializers.SerializerMethodField()
+    items                 = RemovalItemSerializer(many=True, read_only=True)
+    payments              = PaymentSerializer(many=True, read_only=True)
+    amount_paid           = serializers.SerializerMethodField()
+    balance_due           = serializers.SerializerMethodField()
 
     class Meta:
         model  = Removal
         fields = [
             'id', 'date_register', 'client_name', 'client_phone', 'destination',
             'removal_ref', 'invoice_status', 'created_by_username',
-            'invoice', 'products_label', 'payments', 'amount_paid', 'balance_due',
+            'invoice', 'items', 'products_label', 'payments', 'amount_paid', 'balance_due',
             'justification', 'proof_image',
+            'cancelled_at', 'cancelled_by_username', 'cancellation_reason',
         ]
         read_only_fields = ['date_register', 'removal_ref']
 

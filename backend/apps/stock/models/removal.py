@@ -48,6 +48,16 @@ class Removal(models.Model):
     justification = models.TextField(blank=True, null=True)
     proof_image   = models.ImageField(upload_to='loss_proofs/', blank=True, null=True)
 
+    # champs d'annulation
+    cancelled_at         = models.DateTimeField(blank=True, null=True)
+    cancelled_by         = models.ForeignKey(
+        'accounts.User',
+        on_delete=models.SET_NULL,
+        null=True, blank=True,
+        related_name='removals_cancelled',
+    )
+    cancellation_reason  = models.TextField(blank=True, null=True)
+
     # pour la facturation
     invoice_number = models.CharField(max_length=30, blank=True, null=True)
     invoice_total_amount = models.IntegerField(blank=True, null=True)
@@ -56,32 +66,28 @@ class Removal(models.Model):
 
     class Meta:
         db_table = 'removals'
+        indexes = [
+            models.Index(fields=['boutique', 'date_register']),
+            models.Index(fields=['boutique', 'destination']),
+            models.Index(fields=['boutique', 'destination', 'date_register']),
+        ]
 
     def save(self, *args, **kwargs):
-        is_new = self.pk is None  
+        is_new = self.pk is None
+        super().save(*args, **kwargs)
 
-        super().save(*args, **kwargs)  
-
-        if is_new and not self.removal_ref:
-            today = timezone.now().strftime("%Y%m%d")
-            last_id = Removal.objects.count()
-            self.removal_ref = f"REM-{today}-{last_id:04d}"
-
-        if self.destination == 'vente' and not self.invoice_number:
-            count = Removal.objects.filter(destination='vente').count()
-            year = timezone.now().year
-            self.invoice_number = f"FAC-{year}-{count:04d}"
-            self.invoice_date_created = timezone.now()
-
-        # calcule du total
-        if self.destination == 'vente' and self.items.exists(): 
-            total = sum(item.total_price for item in self.items.all()) 
-            self.invoice_total_amount = total
-
-        # enregistrer a nouveau les data
-        super().save(update_fields=[
-            'removal_ref', 'invoice_number', 'invoice_date_created', 'invoice_total_amount'
-        ])
+        if is_new:
+            fields = []
+            if not self.removal_ref:
+                today = timezone.now().strftime("%Y%m%d")
+                self.removal_ref = f"REM-{today}-{self.pk:04d}"
+                fields.append('removal_ref')
+            if self.destination == 'vente' and not self.invoice_number:
+                self.invoice_number = f"FAC-{timezone.now().year}-{self.pk:04d}"
+                self.invoice_date_created = timezone.now()
+                fields.extend(['invoice_number', 'invoice_date_created'])
+            if fields:
+                super().save(update_fields=fields)
 
     @property
     def amount_paid(self):
@@ -101,7 +107,6 @@ class RemovalItem(models.Model):
     quantity = models.PositiveIntegerField()
     unit_price = models.IntegerField(null=True, blank=True)
     purchase_price = models.IntegerField(null=True, blank=True)
-    removal = models.ForeignKey(Removal, related_name='items', on_delete=models.CASCADE)
 
     class Meta:
         db_table = 'removal_items'

@@ -43,7 +43,7 @@ export default function Sidebar() {
 
   return (
     <aside
-      className="w-60 h-full bg-(--black) flex flex-col py-6 px-4 gap-1"
+      className="w-60 bg-(--black) flex flex-col py-6 px-4 gap-1 overflow-y-auto"
       style={{ height: 'calc(100vh - 64px - 48px - 5px)' }}
     >
       <NavItem icon={<LayoutDashboard size={18} />} label="Tableau de bord" path={PATHS.HOME} end />

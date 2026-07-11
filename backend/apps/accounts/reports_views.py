@@ -1,33 +1,49 @@
 from datetime import date, timedelta
-from collections import defaultdict
 
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework import status
 from django.utils import timezone
-from django.db.models import Sum
+from django.db.models import Sum, F, Value, Subquery, OuterRef, ExpressionWrapper, IntegerField, Count
+from django.db.models.functions import ExtractMonth, ExtractWeek, Coalesce
 
-from apps.stock.models.removal import Removal
+from django.core.cache import cache
+
+
+def _cache_get(key):
+    try:
+        return cache.get(key)
+    except Exception:
+        return None
+
+
+def _cache_set(key, value, timeout):
+    try:
+        cache.set(key, value, timeout=timeout)
+    except Exception:
+        pass
+
+from apps.stock.models.removal import Removal, RemovalItem
 from apps.stock.models.entry   import Entry
 from apps.stock.models.expense import Expense
 from apps.stock.models.payment import Payment
 from apps.products.models      import Product
 
+REPORTS_CACHE_TTL = 5 * 60  # 5 minutes
+
 
 # ── Helpers ─────────────────────────────────────────────────────────────────────
 
 def _removals_qs(user):
-    qs = Removal.objects.select_related('created_by').prefetch_related(
-        'items__product', 'payments'
-    )
+    qs = Removal.objects.all()
     if user.boutique_id:
         qs = qs.filter(boutique_id=user.boutique_id)
     return qs
 
 
 def _entries_qs(user):
-    qs = Entry.objects.select_related('created_by', 'product')
+    qs = Entry.objects.all()
     if user.boutique_id:
         qs = qs.filter(boutique_id=user.boutique_id)
     return qs
@@ -51,23 +67,49 @@ def _parse_date_params(request):
     return d_from, d_to
 
 
+def _item_cost_expr():
+    """Prix d'achat × quantité, avec fallback sur le prix d'achat du produit."""
+    pp = Coalesce(F('purchase_price'), F('product__purchase_price'), Value(0, output_field=IntegerField()))
+    return ExpressionWrapper(pp * F('quantity'), output_field=IntegerField())
+
+
 # ── Résumé financier ─────────────────────────────────────────────────────────────
 
 def _financial_summary(sales_qs, losses_qs, boutique_id=None, date_from=None, date_to=None):
-    creances = cout_achat = ventes_totales = 0
-    paiements_par_mode = {'especes': 0, 'mobile_money': 0, 'carte': 0}
+    # Montant total facturé (somme des invoice_total_amount)
+    ventes_totales = sales_qs.aggregate(
+        t=Sum(Coalesce(F('invoice_total_amount'), Value(0, output_field=IntegerField())))
+    )['t'] or 0
 
-    # Ventes facturées, créances et CAMV : basés sur la DATE DE LA VENTE
-    for r in sales_qs.prefetch_related('payments', 'items__product'):
-        total           = r.invoice_total_amount or 0
-        ventes_totales += total
-        paid_on_removal = sum(p.amount for p in r.payments.all())
-        creances       += max(0, total - paid_on_removal)
-        for item in r.items.all():
-            pp = int(item.purchase_price or 0) if item.purchase_price is not None else (int(item.product.purchase_price or 0) if item.product else 0)
-            cout_achat += pp * item.quantity
+    # Coût d'achat total via les RemovalItems liés aux ventes
+    cout_achat = (
+        RemovalItem.objects
+        .filter(removal__in=sales_qs)
+        .aggregate(t=Sum(_item_cost_expr()))['t'] or 0
+    )
 
-    # CA Réel encaissé : basé sur la DATE DU PAIEMENT (argent réellement reçu dans la période)
+    # Créances : somme de max(0, facture - paiements) par vente
+    pay_sum_sq = (
+        Payment.objects
+        .filter(removal=OuterRef('pk'))
+        .values('removal')
+        .annotate(s=Sum('amount'))
+        .values('s')
+    )
+    creances = (
+        sales_qs
+        .annotate(
+            total_facture=Coalesce(F('invoice_total_amount'), Value(0, output_field=IntegerField())),
+            total_paye=Coalesce(Subquery(pay_sum_sq), Value(0, output_field=IntegerField())),
+        )
+        .annotate(creance=ExpressionWrapper(
+            F('total_facture') - F('total_paye'), output_field=IntegerField()
+        ))
+        .filter(creance__gt=0)
+        .aggregate(t=Sum('creance'))['t'] or 0
+    )
+
+    # CA réel encaissé (basé sur la date du paiement)
     pay_filter = {'removal__destination': 'vente'}
     if boutique_id:
         pay_filter['removal__boutique_id'] = boutique_id
@@ -76,22 +118,21 @@ def _financial_summary(sales_qs, losses_qs, boutique_id=None, date_from=None, da
     if date_to:
         pay_filter['date__date__lte'] = date_to
 
-    payments_in_period = Payment.objects.filter(**pay_filter).select_related('removal')
-    ca_reel = sum(p.amount for p in payments_in_period)
-    for p in payments_in_period:
-        mode = p.mode if p.mode in paiements_par_mode else 'especes'
-        paiements_par_mode[mode] += p.amount
+    paiements_par_mode = {'especes': 0, 'mobile_money': 0, 'carte': 0}
+    ca_reel = 0
+    for row in Payment.objects.filter(**pay_filter).values('mode').annotate(t=Sum('amount')):
+        ca_reel += row['t']
+        mode = row['mode'] if row['mode'] in paiements_par_mode else 'especes'
+        paiements_par_mode[mode] += row['t']
 
-    # Marge brute = Prix de vente facturé − Coût d'achat (formule commerciale correcte)
-    marge_brute   = ventes_totales - cout_achat
-
-    charge_pertes = 0
-    qty_pertes    = 0
-    for r in losses_qs.prefetch_related('items__product'):
-        for item in r.items.all():
-            pp = int(item.purchase_price or 0) if item.purchase_price is not None else (int(item.product.purchase_price or 0) if item.product else 0)
-            charge_pertes += pp * item.quantity
-            qty_pertes    += item.quantity
+    # Pertes (charge + quantité)
+    loss_agg = (
+        RemovalItem.objects
+        .filter(removal__in=losses_qs)
+        .aggregate(qty=Sum('quantity'), val=Sum(_item_cost_expr()))
+    )
+    charge_pertes = loss_agg['val'] or 0
+    qty_pertes    = loss_agg['qty'] or 0
 
     # Dépenses de la période
     total_expenses = 0
@@ -103,6 +144,7 @@ def _financial_summary(sales_qs, losses_qs, boutique_id=None, date_from=None, da
             exp_qs = exp_qs.filter(date_register__date__lte=date_to)
         total_expenses = exp_qs.aggregate(t=Sum('amount'))['t'] or 0
 
+    marge_brute  = ventes_totales - cout_achat
     benefice_net = marge_brute - charge_pertes - total_expenses
 
     return {
@@ -122,36 +164,36 @@ def _financial_summary(sales_qs, losses_qs, boutique_id=None, date_from=None, da
 # ── Résumé matériel ──────────────────────────────────────────────────────────────
 
 def _material_summary(removals_qs, entries_qs, products_qs):
-    def _qty(dest):
-        return sum(
-            item.quantity
-            for r in removals_qs.filter(destination=dest).prefetch_related('items')
-            for item in r.items.all()
-        )
-
-    qty_vendues = _qty('vente')
-    qty_dons    = _qty('don')
+    qty_vendues = (
+        RemovalItem.objects
+        .filter(removal__in=removals_qs.filter(destination='vente'))
+        .aggregate(t=Sum('quantity'))['t'] or 0
+    )
+    qty_dons = (
+        RemovalItem.objects
+        .filter(removal__in=removals_qs.filter(destination='don'))
+        .aggregate(t=Sum('quantity'))['t'] or 0
+    )
     qty_entrees = entries_qs.aggregate(t=Sum('quantity'))['t'] or 0
 
-    # Pertes : quantité + valorisation financière (prix d'achat figé au moment de la perte)
-    qty_pertes    = 0
-    valeur_pertes = 0
-    for r in removals_qs.filter(destination='perte').prefetch_related('items__product'):
-        for item in r.items.all():
-            qty_pertes    += item.quantity
-            pp = int(item.purchase_price or 0) if item.purchase_price is not None else (int(item.product.purchase_price or 0) if item.product else 0)
-            valeur_pertes += pp * item.quantity
+    loss_agg = (
+        RemovalItem.objects
+        .filter(removal__in=removals_qs.filter(destination='perte'))
+        .aggregate(qty=Sum('quantity'), val=Sum(_item_cost_expr()))
+    )
+    qty_pertes    = loss_agg['qty'] or 0
+    valeur_pertes = loss_agg['val'] or 0
 
-    # Valorisation du stock courant
-    stock_value = sum(
-        int(p.purchase_price or 0) * p.stock
-        for p in products_qs
+    stock_value = (
+        products_qs
+        .aggregate(t=Sum(ExpressionWrapper(
+            Coalesce(F('purchase_price'), Value(0, output_field=IntegerField())) * F('stock'),
+            output_field=IntegerField()
+        )))['t'] or 0
     )
     articles_disponibles = products_qs.filter(stock__gt=0).count()
     articles_rupture     = products_qs.filter(stock__lte=0).count()
-    rupture_products     = list(
-        products_qs.filter(stock__lte=0).values('id', 'product_name', 'category')
-    )
+    rupture_products     = list(products_qs.filter(stock__lte=0).values('id', 'product_name', 'category'))
 
     return {
         'qty_vendues':          qty_vendues,
@@ -169,78 +211,112 @@ def _material_summary(removals_qs, entries_qs, products_qs):
 # ── Top 5 catégories vendues ─────────────────────────────────────────────────────
 
 def _top_categories(sales_qs):
-    cat_map = defaultdict(int)
-    for r in sales_qs.prefetch_related('items__product'):
-        for item in r.items.all():
-            cat = item.product.category if item.product else 'Autres'
-            cat_map[cat] += item.quantity
-    sorted_cats = sorted(cat_map.items(), key=lambda x: x[1], reverse=True)[:5]
-    return [{'category': cat, 'qty': qty} for cat, qty in sorted_cats]
+    rows = (
+        RemovalItem.objects
+        .filter(removal__in=sales_qs)
+        .values(cat=Coalesce(F('product__category'), Value('Autres')))
+        .annotate(qty=Sum('quantity'))
+        .order_by('-qty')[:5]
+    )
+    return [{'category': row['cat'], 'qty': row['qty']} for row in rows]
 
 
 # ── Top produits vendus ──────────────────────────────────────────────────────────
 
 def _top_products(sales_qs, limit=10):
-    prod_map = {}  # id → { name, category, qty, revenue }
-    for r in sales_qs.prefetch_related('items__product'):
-        for item in r.items.all():
-            if not item.product:
-                continue
-            pid = item.product.id
-            if pid not in prod_map:
-                prod_map[pid] = {
-                    'id':       pid,
-                    'name':     item.product.product_name,
-                    'category': item.product.category or 'Autres',
-                    'qty':      0,
-                    'revenue':  0,
-                }
-            prod_map[pid]['qty']     += item.quantity
-            prod_map[pid]['revenue'] += int(item.unit_price or 0) * item.quantity
-    return sorted(prod_map.values(), key=lambda x: x['qty'], reverse=True)[:limit]
+    rows = (
+        RemovalItem.objects
+        .filter(removal__in=sales_qs, product__isnull=False)
+        .values('product__id', 'product__product_name', 'product__category')
+        .annotate(
+            qty=Sum('quantity'),
+            revenue=Sum(ExpressionWrapper(
+                Coalesce(F('unit_price'), Value(0, output_field=IntegerField())) * F('quantity'),
+                output_field=IntegerField()
+            ))
+        )
+        .order_by('-qty')[:limit]
+    )
+    return [
+        {
+            'id':       row['product__id'],
+            'name':     row['product__product_name'],
+            'category': row['product__category'] or 'Autres',
+            'qty':      row['qty'],
+            'revenue':  row['revenue'] or 0,
+        }
+        for row in rows
+    ]
 
 
-# ── Flux mensuel (12 mois, pour graphique matériel) ──────────────────────────────
+# ── Flux mensuel (12 mois) — 2 queries au lieu de 24 ────────────────────────────
 
 def _monthly_flux(user, year):
-    all_rem = _removals_qs(user)
-    all_ent = _entries_qs(user)
-    months  = []
-    for m in range(1, 13):
-        ent_qty = all_ent.filter(
-            date_register__year=year, date_register__month=m
-        ).aggregate(t=Sum('quantity'))['t'] or 0
+    bid = user.boutique_id
 
-        out_qty = sum(
-            item.quantity
-            for r in all_rem.filter(date_register__year=year, date_register__month=m)
-                             .prefetch_related('items')
-            for item in r.items.all()
+    ent_filter = {'date_register__year': year}
+    if bid:
+        ent_filter['boutique_id'] = bid
+    ent_map = {
+        row['m']: row['qty']
+        for row in (
+            Entry.objects.filter(**ent_filter)
+            .values(m=ExtractMonth('date_register'))
+            .annotate(qty=Sum('quantity'))
         )
-        months.append({'mois': m, 'entrees': ent_qty, 'sorties': out_qty})
-    return months
+    }
+
+    out_filter = {'removal__date_register__year': year}
+    if bid:
+        out_filter['removal__boutique_id'] = bid
+    out_map = {
+        row['m']: row['qty']
+        for row in (
+            RemovalItem.objects.filter(**out_filter)
+            .values(m=ExtractMonth('removal__date_register'))
+            .annotate(qty=Sum('quantity'))
+        )
+    }
+
+    return [
+        {'mois': m, 'entrees': ent_map.get(m, 0), 'sorties': out_map.get(m, 0)}
+        for m in range(1, 13)
+    ]
 
 
-# ── Évolution financière mensuelle ───────────────────────────────────────────────
+# ── Évolution financière mensuelle — 2 queries au lieu de 24 ────────────────────
 
 def _financial_evolution(user, year):
-    all_rem = _removals_qs(user)
-    months  = []
-    for m in range(1, 13):
-        sales  = all_rem.filter(destination='vente', date_register__year=year, date_register__month=m)
-        losses = all_rem.filter(destination='perte', date_register__year=year, date_register__month=m)
+    bid = user.boutique_id
 
-        ca = sum(
-            sum(p.amount for p in r.payments.all())
-            for r in sales.prefetch_related('payments')
+    pay_filter = {'removal__destination': 'vente', 'date__year': year}
+    if bid:
+        pay_filter['removal__boutique_id'] = bid
+    ca_map = {
+        row['m']: row['ca']
+        for row in (
+            Payment.objects.filter(**pay_filter)
+            .values(m=ExtractMonth('date'))
+            .annotate(ca=Sum('amount'))
         )
-        charge = sum(
-            int(item.product.purchase_price or 0) * item.quantity
-            for r in losses.prefetch_related('items__product')
-            for item in r.items.all()
+    }
+
+    loss_filter = {'removal__destination': 'perte', 'removal__date_register__year': year}
+    if bid:
+        loss_filter['removal__boutique_id'] = bid
+    charge_map = {
+        row['m']: row['charge'] or 0
+        for row in (
+            RemovalItem.objects.filter(**loss_filter)
+            .values(m=ExtractMonth('removal__date_register'))
+            .annotate(charge=Sum(_item_cost_expr()))
         )
-        months.append({'mois': m, 'ca_reel': ca, 'charge_pertes': charge})
-    return months
+    }
+
+    return [
+        {'mois': m, 'ca_reel': ca_map.get(m, 0), 'charge_pertes': charge_map.get(m, 0)}
+        for m in range(1, 13)
+    ]
 
 
 # ── Vue principale ───────────────────────────────────────────────────────────────
@@ -249,24 +325,18 @@ def _financial_evolution(user, year):
 @permission_classes([IsAuthenticated])
 def get_reports(request):
     period  = request.query_params.get('period', 'day')
-    section = request.query_params.get('section', 'both')  # 'materiel' | 'financier' | 'both'
+    section = request.query_params.get('section', 'both')
     user    = request.user
 
-    # ── RBAC ────────────────────────────────────────────────────────────────────
-    # Le bilan matériel est accessible à tous les rôles sur toutes les périodes.
-    # Le bilan financier mensuel/annuel est réservé OWNER (+ MANAGER pour mensuel).
     wants_financial = section in ('financier', 'both')
 
     if wants_financial and period == 'month' and user.role not in ('OWNER', 'MANAGER') and not user.is_superuser:
         return Response({'error': 'Accès non autorisé au bilan financier mensuel.'}, status=status.HTTP_403_FORBIDDEN)
     if wants_financial and period == 'year' and user.role not in ('OWNER',) and not user.is_superuser:
         return Response({'error': 'Accès non autorisé au bilan financier annuel.'}, status=status.HTTP_403_FORBIDDEN)
+    if period == 'custom' and user.role == 'EMPLOYEE' and not user.is_superuser:
+        return Response({'error': 'Accès non autorisé au filtre de dates.'}, status=status.HTTP_403_FORBIDDEN)
 
-    if period == 'custom':
-        if user.role == 'EMPLOYEE' and not user.is_superuser:
-            return Response({'error': 'Accès non autorisé au filtre de dates.'}, status=status.HTTP_403_FORBIDDEN)
-
-    # ── Filtre dates personnalisé ────────────────────────────────────────────────
     date_from, date_to = None, None
     if period == 'custom':
         date_from, date_to = _parse_date_params(request)
@@ -277,111 +347,128 @@ def get_reports(request):
     all_rem  = _removals_qs(user)
     all_ent  = _entries_qs(user)
     all_prod = _products_qs(user)
+    bid      = user.boutique_id
 
-    bid = user.boutique_id
+    # Cache key unique par boutique + période + section + date du jour
+    today_str = now.strftime('%Y-%m-%d')
+    _bid_key  = bid or 'superadmin'
+    if period == 'custom':
+        _period_key = f"custom:{date_from}:{date_to}"
+    elif period == 'month':
+        _period_key = f"month:{now.year}-{now.month:02d}"
+    elif period == 'year':
+        _period_key = f"year:{now.year}"
+    else:
+        _period_key = f"day:{today_str}"
+    cache_key = f"reports:{_bid_key}:{_period_key}:{section}"
+
+    cached = _cache_get(cache_key)
+    if cached is not None:
+        return Response(cached)
 
     # ── Journalier ──────────────────────────────────────────────────────────────
     if period == 'day':
-        today = now.date()
-        rem   = all_rem.filter(date_register__date=today)
-        ent   = all_ent.filter(date_register__date=today)
-
+        today    = now.date()
+        rem      = all_rem.filter(date_register__date=today)
+        ent      = all_ent.filter(date_register__date=today)
         sales_qs = rem.filter(destination='vente')
-        fin = _financial_summary(sales_qs, rem.filter(destination='perte'),
-                                 boutique_id=bid, date_from=today, date_to=today)
-        mat = _material_summary(rem, ent, all_prod)
 
-        return Response({
+        data = {
             'period': 'day', 'date': today.isoformat(),
-            'financier':      fin,
-            'materiel':       mat,
+            'financier':      _financial_summary(sales_qs, rem.filter(destination='perte'),
+                                                 boutique_id=bid, date_from=today, date_to=today),
+            'materiel':       _material_summary(rem, ent, all_prod),
             'top_categories': _top_categories(sales_qs),
             'top_products':   _top_products(sales_qs),
-        })
+        }
+        _cache_set(cache_key, data, timeout=REPORTS_CACHE_TTL)
+        return Response(data)
 
     # ── Mensuel ─────────────────────────────────────────────────────────────────
     if period == 'month':
-        rem = all_rem.filter(date_register__year=now.year, date_register__month=now.month)
-        ent = all_ent.filter(date_register__year=now.year, date_register__month=now.month)
-
+        rem      = all_rem.filter(date_register__year=now.year, date_register__month=now.month)
+        ent      = all_ent.filter(date_register__year=now.year, date_register__month=now.month)
         sales_qs = rem.filter(destination='vente')
+
         from datetime import date as _date
-        m_start = _date(now.year, now.month, 1)
         import calendar
+        m_start = _date(now.year, now.month, 1)
         m_end   = _date(now.year, now.month, calendar.monthrange(now.year, now.month)[1])
+
         fin = _financial_summary(sales_qs, rem.filter(destination='perte'),
                                  boutique_id=bid, date_from=m_start, date_to=m_end)
-        mat = _material_summary(rem, ent, all_prod)
 
-        # CA hebdomadaire
-        weekly = []
-        for r in rem.filter(destination='vente').prefetch_related('payments'):
-            wk   = r.date_register.isocalendar()[1]
-            paid = sum(p.amount for p in r.payments.all())
-            e = next((w for w in weekly if w['week'] == wk), None)
-            if e:
-                e['ca_reel'] += paid
-                e['count'] += 1
-            else:
-                weekly.append({'week': wk, 'ca_reel': paid, 'count': 1})
-        weekly.sort(key=lambda x: x['week'])
-
-        prev_start = (now.replace(day=1) - timedelta(days=1)).replace(day=1)
-        prev_ca = sum(
-            sum(p.amount for p in r.payments.all())
-            for r in all_rem.filter(destination='vente',
-                date_register__year=prev_start.year, date_register__month=prev_start.month
-            ).prefetch_related('payments')
+        # CA hebdomadaire — 1 seule query d'aggregation
+        weekly = list(
+            Payment.objects
+            .filter(removal__in=sales_qs)
+            .values(week=ExtractWeek('date'))
+            .annotate(ca_reel=Sum('amount'), count=Count('removal', distinct=True))
+            .order_by('week')
+            .values('week', 'ca_reel', 'count')
         )
 
-        return Response({
+        prev_start = (now.replace(day=1) - timedelta(days=1)).replace(day=1)
+        prev_ca_row = (
+            Payment.objects
+            .filter(removal__destination='vente', removal__boutique_id=bid,
+                    date__year=prev_start.year, date__month=prev_start.month)
+            .aggregate(t=Sum('amount'))
+        ) if bid else Payment.objects.filter(
+            removal__destination='vente',
+            date__year=prev_start.year, date__month=prev_start.month
+        ).aggregate(t=Sum('amount'))
+        prev_ca = prev_ca_row['t'] or 0
+
+        data = {
             'period': 'month', 'month': f"{now.year}-{now.month:02d}",
             'financier':      {**fin, 'prev_ca': prev_ca},
-            'materiel':       mat,
+            'materiel':       _material_summary(rem, ent, all_prod),
             'top_categories': _top_categories(sales_qs),
             'top_products':   _top_products(sales_qs),
             'weekly':         weekly,
-        })
+        }
+        _cache_set(cache_key, data, timeout=REPORTS_CACHE_TTL)
+        return Response(data)
 
     # ── Annuel ───────────────────────────────────────────────────────────────────
     if period == 'year':
-        rem = all_rem.filter(date_register__year=now.year)
-        ent = all_ent.filter(date_register__year=now.year)
-
+        rem      = all_rem.filter(date_register__year=now.year)
+        ent      = all_ent.filter(date_register__year=now.year)
         sales_qs = rem.filter(destination='vente')
+
         from datetime import date as _date
         y_start = _date(now.year, 1, 1)
         y_end   = _date(now.year, 12, 31)
-        fin = _financial_summary(sales_qs, rem.filter(destination='perte'),
-                                 boutique_id=bid, date_from=y_start, date_to=y_end)
-        mat = _material_summary(rem, ent, all_prod)
 
-        return Response({
+        data = {
             'period': 'year', 'year': now.year,
-            'financier':        fin,
-            'materiel':         mat,
-            'top_categories':   _top_categories(sales_qs),
-            'top_products':     _top_products(sales_qs),
-            'evolution_fin':    _financial_evolution(user, now.year),
-            'evolution_mat':    _monthly_flux(user, now.year),
-        })
+            'financier':      _financial_summary(sales_qs, rem.filter(destination='perte'),
+                                                 boutique_id=bid, date_from=y_start, date_to=y_end),
+            'materiel':       _material_summary(rem, ent, all_prod),
+            'top_categories': _top_categories(sales_qs),
+            'top_products':   _top_products(sales_qs),
+            'evolution_fin':  _financial_evolution(user, now.year),
+            'evolution_mat':  _monthly_flux(user, now.year),
+        }
+        _cache_set(cache_key, data, timeout=REPORTS_CACHE_TTL)
+        return Response(data)
 
     # ── Personnalisé ─────────────────────────────────────────────────────────────
     if period == 'custom':
-        rem = all_rem.filter(date_register__date__gte=date_from, date_register__date__lte=date_to)
-        ent = all_ent.filter(date_register__date__gte=date_from, date_register__date__lte=date_to)
-
+        rem      = all_rem.filter(date_register__date__gte=date_from, date_register__date__lte=date_to)
+        ent      = all_ent.filter(date_register__date__gte=date_from, date_register__date__lte=date_to)
         sales_qs = rem.filter(destination='vente')
-        fin = _financial_summary(sales_qs, rem.filter(destination='perte'),
-                                 boutique_id=bid, date_from=date_from, date_to=date_to)
-        mat = _material_summary(rem, ent, all_prod)
 
-        return Response({
+        data = {
             'period': 'custom', 'date_from': date_from.isoformat(), 'date_to': date_to.isoformat(),
-            'financier':      fin,
-            'materiel':       mat,
+            'financier':      _financial_summary(sales_qs, rem.filter(destination='perte'),
+                                                 boutique_id=bid, date_from=date_from, date_to=date_to),
+            'materiel':       _material_summary(rem, ent, all_prod),
             'top_categories': _top_categories(sales_qs),
             'top_products':   _top_products(sales_qs),
-        })
+        }
+        _cache_set(cache_key, data, timeout=REPORTS_CACHE_TTL)
+        return Response(data)
 
     return Response({'error': 'period invalide.'}, status=status.HTTP_400_BAD_REQUEST)

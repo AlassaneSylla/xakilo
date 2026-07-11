@@ -32,12 +32,16 @@ class Product(models.Model):
 
     class Meta:
         db_table = 'products'
+        indexes = [
+            models.Index(fields=['boutique', 'stock']),
+        ]
 
     def save(self, *args, **kwargs):
         if not self.product_ref:
-            last_product = Product.objects.order_by('-id').first()
-            count = (last_product.id + 1) if last_product else 1
-            self.product_ref = f"PROD-{count:04d}"
+            super().save(*args, **kwargs)
+            self.product_ref = f"PROD-{self.id:04d}"
+            Product.objects.filter(pk=self.pk).update(product_ref=self.product_ref)
+            return
         super().save(*args, **kwargs)
 
     def __str__(self):

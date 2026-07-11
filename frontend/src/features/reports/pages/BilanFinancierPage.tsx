@@ -51,23 +51,25 @@ export default function BilanFinancierPage() {
 
   // ── Créances ─────────────────────────────────────────────────────────────
   const [unpaidInvoices, setUnpaidInvoices] = useState<UnpaidInvoice[]>([]);
+  const [unpaidCount,    setUnpaidCount]    = useState(0);
+  const [unpaidPage,     setUnpaidPage]     = useState(1);
   const [unpaidLoading,  setUnpaidLoading]  = useState(false);
   const [paying,         setPaying]         = useState<UnpaidInvoice | null>(null);
   const [payAmount,      setPayAmount]      = useState('');
   const [payMode,        setPayMode]        = useState<'especes' | 'mobile_money' | 'carte'>('especes');
   const [paySubmitting,  setPaySubmitting]  = useState(false);
 
-  const fetchUnpaid = () => {
+  const fetchUnpaid = (p = unpaidPage) => {
     if (!isManager) return;
     setUnpaidLoading(true);
-    getUnpaidInvoices()
-      .then(setUnpaidInvoices)
-      .catch(() => setUnpaidInvoices([]))
+    getUnpaidInvoices(p)
+      .then(({ results, count }) => { setUnpaidInvoices(results); setUnpaidCount(count); })
+      .catch(() => { setUnpaidInvoices([]); setUnpaidCount(0); })
       .finally(() => setUnpaidLoading(false));
   };
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  useEffect(() => { fetchUnpaid(); }, [isManager]);
+  useEffect(() => { fetchUnpaid(unpaidPage); }, [isManager, unpaidPage]);
 
   const openPayModal = (inv: UnpaidInvoice) => {
     setPaying(inv);
@@ -331,7 +333,7 @@ export default function BilanFinancierPage() {
                 <div className="flex items-center gap-5 text-right">
                   <div>
                     <p className="text-[10px] text-gray-400 uppercase tracking-widest">Factures</p>
-                    <p className="text-base font-bold">{unpaidInvoices.length}</p>
+                    <p className="text-base font-bold">{unpaidCount}</p>
                   </div>
                   <div className="w-px h-8 bg-base-300" />
                   <div>
@@ -401,6 +403,20 @@ export default function BilanFinancierPage() {
                     ))}
                   </tbody>
                 </table>
+              </div>
+            )}
+
+            {Math.ceil(unpaidCount / 20) > 1 && (
+              <div className="flex items-center justify-center gap-3 mt-4 no-print">
+                <button type="button" onClick={() => setUnpaidPage(p => p - 1)} disabled={unpaidPage === 1}
+                  className="btn btn-sm btn-ghost disabled:opacity-30">
+                  <ChevronLeft size={16} />
+                </button>
+                <span className="text-sm">{unpaidPage} / {Math.ceil(unpaidCount / 20)}</span>
+                <button type="button" onClick={() => setUnpaidPage(p => p + 1)} disabled={unpaidPage >= Math.ceil(unpaidCount / 20)}
+                  className="btn btn-sm btn-ghost disabled:opacity-30">
+                  <ChevronRight size={16} />
+                </button>
               </div>
             )}
           </div>

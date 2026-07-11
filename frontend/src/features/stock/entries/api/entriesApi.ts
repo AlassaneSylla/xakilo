@@ -1,8 +1,13 @@
 import { client } from '../../../../shared/api/client';
 import type { Entry, EntryPayload } from '../types';
 
-export const getEntries = async (): Promise<Entry[]> => {
-  const { data } = await client.get<Entry[]>('entries/');
+export type PaginatedEntries = { count: number; results: Entry[] };
+
+export const getEntries = async (page = 1, search = '', date = ''): Promise<PaginatedEntries> => {
+  const params: Record<string, string | number> = { page };
+  if (search) params.search = search;
+  if (date) params.date = date;
+  const { data } = await client.get<PaginatedEntries>('entries/', { params });
   return data;
 };
 
